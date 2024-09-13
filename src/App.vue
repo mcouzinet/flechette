@@ -4,27 +4,34 @@
     <div class="general">
 
       <table>
-        <tr>
-          <th></th>
-          <th>Bulle</th>
-          <th>20</th>
-          <th>19</th>
-          <th>18</th>
-          <th>17</th>
-          <th>16</th>
-          <th>15</th>
-        </tr>
-        <tr v-for="participant, index in participants" :key="participant.id">
-          <td class="caseNom">
-          {{ participant.name }}</td>
-          <td
-            v-for="i in 7"
-            class="score"
-            :class="['score-' + participant.state[i-1], getState(i)]"
-            @click="score(participant.id, i-1)">
-            <span></span>
-          </td>
-        </tr>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Bulle</th>
+            <th>20</th>
+            <th>19</th>
+            <th>18</th>
+            <th>17</th>
+            <th>16</th>
+            <th>15</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="participant, index in participants" :key="participant.id">
+            <th class="caseNom">
+            {{ participant.name }}</th>
+            <td
+              v-for="i in 7"
+              class="score"
+              :class="['score-' + participant.state[i-1], getState(i)]"
+              @click="score(participant.id, i-1)">
+              <span></span>
+            </td>
+          </tr>
+        </tbody>
+
+
+        <tr v-if="participants.length == 0" class="empty"></tr>
       </table>
 
       <div class="top">
@@ -74,7 +81,20 @@ export default {
       id: 0,
       currentPlayer: 0,
       history: [],
-      participants: [ ],
+      participants: [
+        // {
+        //   id: 0,
+        //   name: 'Joueur 1',
+        //   state: [0, 0, 0, 0, 0, 0, 0],
+        //   score: 0
+        // },
+        // {
+        //   id: 1,
+        //   name: 'Joueur 2',
+        //   state: [0, 0, 0, 0, 0, 0, 0],
+        //   score: 0
+        // }
+      ],
       indexScore: [25, 20, 19, 18, 17, 16, 15],
     };
   },
@@ -161,6 +181,20 @@ export default {
         });
       }
       participant.state[nbr] += 1;
+
+      this.checkWin();
+    },
+    checkWin() {
+
+      const firstId = this.participantOrdered[0].id;
+
+      this.participants.forEach((p) => {
+        console.log('win', firstId, p.state.every((s) => s >= 3), p.id);
+        if (p.state.every((s) => s >= 3) && firstId === p.id) {
+          console.log('win', p.name);
+          alert(`${p.name} a gagné`);
+        }
+      });
     }
   },
 };
@@ -184,6 +218,10 @@ table {
   height: 100%;
 }
 
+thead {
+  height: 100px;
+}
+
 th {
   font-weight: 900;
   font-size: 24px;
@@ -194,6 +232,15 @@ th {
   height: 50px;
   background: #2d3171;
   color: #FFF;
+  max-height: 50px;
+}
+
+.empty {
+  height: 50%;
+}
+
+tbody th{
+  background-color: #464646;
 }
 
 td {
@@ -203,13 +250,21 @@ td {
   text-align: center;
 
   &:active {
-    background: #d21953;
+    background: #136f22;
   }
   &:hover {
-    background: rgba($color: #d21953, $alpha: 0.4);
+    box-shadow: inset 0 2px 3px rgba($color: #000000, $alpha: 0.5);
   }
   &.closed {
-    background: #d21953;
+    background: #282828;
+
+    span {
+      border-color: #dcdcdc;
+      &:before,
+      &:after {
+        background-color: #dcdcdc;
+      }
+    }
   }
 }
 
@@ -221,10 +276,11 @@ td {
 
   span {
     display: block;
-    border: 3px solid black;
+    border: 6px solid black;
     border-radius: 120px;
-    height: 50px;
-    width: 50px;
+    height: 75px;
+    width: 100%;
+    max-width: 75px;
     position: absolute;
     top: 50%;
     left: 50%;
@@ -237,7 +293,7 @@ td {
       left: 50%;
       content: '';
       display: block;
-      width: 5px;
+      width: 8px;
       border-radius: 3px;
       height: 50px;
       background-color: black;
@@ -373,15 +429,16 @@ td {
   li {
     display: block;
     font-size: 14px;
+    text-align: center;
 
     span {
       font-weight: 900;
     }
 
-    &:first-of-type { font-size: 18px; }
-    &:nth-child(2) { font-size: 17px; }
-    &:nth-child(3) { font-size: 16px; }
-    &:nth-child(4) { font-size: 15px; }
+    &:first-of-type { font-size: 22px; }
+    &:nth-child(2) { font-size: 20px; }
+    &:nth-child(3) { font-size: 18px; }
+    &:nth-child(4) { font-size: 16px; }
   }
 }
 
@@ -396,17 +453,17 @@ td {
   }
 
   td {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 900;
 
     &:first-of-type {
       font-size: 14px;
-      font-weight: 400;
+      font-weight: 700;
       color: #515cb7;
     }
 
     &:nth-child(2) {
-      font-size: 18px;
+      font-size: 24px;
       color: #d21953;
     }
   }
