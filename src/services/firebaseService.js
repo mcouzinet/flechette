@@ -3,6 +3,10 @@ import { collection, addDoc, getDocs, query, orderBy, limit, where, serverTimest
 
 class FirebaseService {
   async sendGameVictory(gameData) {
+    if (!auth.currentUser) {
+      this.saveToLocalStorage(gameData)
+      return null
+    }
     try {
       const payload = {
         jeu: gameData.gameType,
@@ -24,7 +28,7 @@ class FirebaseService {
         totalMoves: gameData.totalMoves,
         date: new Date().toISOString().split('T')[0],
         createdAt: serverTimestamp(),
-        userId: auth.currentUser?.uid || null
+        userId: auth.currentUser.uid
       }
 
       const docRef = await addDoc(collection(db, 'game_results'), payload)
