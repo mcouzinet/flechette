@@ -12,7 +12,7 @@ class FirebaseService {
         jeu: gameData.gameType,
         joueurs: gameData.participants.map(p => p.name),
         scores: gameData.participants.map(p => {
-          if (gameData.gameType === 'Shanghai') {
+          if (gameData.gameType === 'Shanghai' || gameData.gameType === 'CountUp') {
             return p.totalScore || 0
           } else if (gameData.gameType === 'Cricket') {
             return p.score || 0
@@ -118,6 +118,11 @@ class FirebaseService {
       sortedParticipants = [...participants]
       scoreDifference = 0
       winnerScore = 1
+    } else if (gameType === 'CountUp') {
+      sortedParticipants = [...participants].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0))
+      const secondPlace = sortedParticipants[1]
+      winnerScore = winner.totalScore || 0
+      scoreDifference = secondPlace ? winnerScore - (secondPlace.totalScore || 0) : 0
     } else if (gameType === 'Halve-It' || gameType === 'Baseball') {
       sortedParticipants = [...participants].sort((a, b) => (b.totalScore || b.score || 0) - (a.totalScore || a.score || 0))
       const secondPlace = sortedParticipants[1]

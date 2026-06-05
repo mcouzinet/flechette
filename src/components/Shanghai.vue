@@ -4,19 +4,14 @@
     <!-- Cadre -->
     <div style="position: absolute; inset: 9px; border: 2px solid var(--chalk-line); border-radius: 12px; pointer-events: none; opacity: 0.5"></div>
 
-    <!-- Header -->
-    <header class="flex flex-wrap items-center justify-between gap-3 px-5 pt-3 pb-2 relative" style="border-bottom: 2px dashed var(--chalk-line); margin: 9px 9px 0">
-      <button @click="$parent.currentComponent = null" class="chalk-btn-ghost text-base xl:text-[21px]">&#8249; Retour</button>
-      <div class="flex items-baseline gap-3 min-w-0">
-        <span class="text-xl xl:text-[28px]" style="font-family: var(--font-display); letter-spacing: 0.5px">SHANGHAI</span>
-        <span class="text-[19px] whitespace-nowrap hidden xl:inline" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-gold)">20 rounds &middot; simple &middot; double &middot; triple</span>
-      </div>
-      <div class="flex gap-2 flex-none">
-        <button @click="showRulesModal = true" class="chalk-btn-ghost text-base xl:text-[21px]">? R&egrave;gles</button>
-        <button @click="toggleFullscreen" class="chalk-btn-ghost text-base xl:text-[21px] hidden xl:block btn-fullscreen">{{ isFullscreen ? 'Quitter' : '&#9974; Plein &eacute;cran' }}</button>
-        <button @click="confirmReset" class="chalk-btn-green text-base xl:text-[21px]">&#8635; Relancer</button>
-      </div>
-    </header>
+    <GameHeader
+      title="SHANGHAI"
+      subtitle="20 rounds &middot; simple &middot; double &middot; triple"
+      :is-fullscreen="isFullscreen"
+      @back="$parent.currentComponent = null"
+      @show-rules="showRulesModal = true"
+      @toggle-fullscreen="toggleFullscreen"
+      @confirm-reset="confirmReset" />
 
     <!-- Body -->
     <div class="flex-1 min-h-0 flex flex-col xl:grid gap-5 px-5 py-5 relative overflow-auto sh-body">
@@ -148,7 +143,6 @@
       <aside class="flex flex-col gap-3 min-h-0 xl:pl-5 pt-4 xl:pt-0 sh-sidebar">
         <div class="flex items-center justify-between">
           <span class="text-lg xl:text-[22px]" style="font-family: var(--font-display); letter-spacing: 0.5px">LE CLASSEMENT</span>
-          <button @click="undoLastScore" :class="history.length ? 'chalk-btn-red' : 'chalk-btn-ghost'" :disabled="history.length === 0">&#8630; Annuler</button>
         </div>
 
         <!-- Classement -->
@@ -175,114 +169,57 @@
           </div>
         </div>
 
-        <!-- Historique -->
-        <div class="flex items-center justify-between mt-1">
-          <span class="text-[19px]" style="font-family: var(--font-display); letter-spacing: 0.5px">L'HISTORIQUE</span>
-        </div>
-        <div class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1.5 chalk-scroll">
-          <div v-if="history.length === 0" class="m-auto text-center py-6 text-[20px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">
-            <div class="text-[30px] opacity-50">&#9998;</div>
-            Aucun coup jou&eacute;...<br>l'historique s'affichera ici.
-          </div>
-          <div v-for="(entry, index) in [...history].reverse()" :key="index"
-            class="flex items-center gap-3 py-1.5 px-1"
-            style="border-bottom: 1.5px dashed var(--chalk-line2)">
-            <span class="flex-1 text-[16px]" style="font-family: var(--font-hand); font-weight: 600">
-              <b>{{ entry.player.name }}</b>
-              <span style="color: var(--chalk-faint2)"> &middot; R{{ entry.round }}</span>
-            </span>
-            <span class="text-[22px] leading-none min-w-[48px] h-[48px] flex items-center justify-center rounded-full"
-              style="font-family: var(--font-display); border: 2px dashed var(--chalk-line)">
-              {{ entry.score }}
-            </span>
-          </div>
-        </div>
+        <HistoryPanel :history="history" @undo="onUndo">
+          <template #entry="{ entry, index, total }">
+            <div class="flex items-center gap-3">
+              <span class="flex-1 text-[16px]" style="font-family: var(--font-hand); font-weight: 600">
+                <b>{{ entry.player.name }}</b>
+                <span style="color: var(--chalk-faint2)"> &middot; R{{ entry.round }}</span>
+              </span>
+              <span class="text-[22px] leading-none min-w-[48px] h-[48px] flex items-center justify-center rounded-full"
+                style="font-family: var(--font-display); border: 2px dashed var(--chalk-line)">
+                {{ entry.score }}
+              </span>
+            </div>
+          </template>
+        </HistoryPanel>
       </aside>
     </div>
 
-    <!-- Modal Règles -->
-    <div v-if="showRulesModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="chalk-grain rounded-2xl p-6 xl:p-8 border-2 border-dashed max-w-lg mx-4 max-h-[80vh] overflow-y-auto chalk-scroll"
-        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-line)">
-        <h3 class="text-2xl text-center mb-4" style="font-family: var(--font-display); color: var(--chalk-gold)">R&Egrave;GLES DU SHANGHAI</h3>
-        <div class="space-y-3 text-[22px] leading-relaxed" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-          <p><span style="color: var(--chalk-cream)">But du jeu :</span> Marquer le plus de points en 20 rounds, ou r&eacute;aliser un Shanghai pour gagner instantan&eacute;ment.</p>
-          <p><span style="color: var(--chalk-cream)">D&eacute;roulement :</span> Chaque round, on vise le num&eacute;ro du round (round 1 = cible 1, round 2 = cible 2, etc.).</p>
-          <p><span style="color: var(--chalk-cream)">Scoring :</span> Simple = valeur du num&eacute;ro, Double = x2, Triple = x3. Manqu&eacute; = 0 point.</p>
-          <p><span style="color: var(--chalk-cream)">Shanghai :</span> Toucher le simple + double + triple du m&ecirc;me num&eacute;ro dans un m&ecirc;me round = victoire imm&eacute;diate !</p>
-          <p><span style="color: var(--chalk-cream)">Fin de partie :</span> Apr&egrave;s 20 rounds, le joueur avec le plus de points gagne (sauf Shanghai).</p>
+    <GameModals
+      :show-rules="showRulesModal"
+      :show-reset="showResetModal"
+      :show-winner="showWinnerModal"
+      rules-title="R&Egrave;GLES DU SHANGHAI"
+      :winner-name="winner?.name"
+      :winner-subtitle="isShangaiWin ? 'SHANGHAI ! a remport&eacute; la partie !' : 'a remport&eacute; la partie !'"
+      @close-rules="showRulesModal = false"
+      @close-reset="showResetModal = false"
+      @confirm-reset="resetGame"
+      @close-winner="showWinnerModal = false"
+      @new-game="resetGame">
+      <template #rules-content>
+        <p><span style="color: var(--chalk-cream)">But du jeu :</span> Marquer le plus de points en 20 rounds, ou r&eacute;aliser un Shanghai pour gagner instantan&eacute;ment.</p>
+        <p><span style="color: var(--chalk-cream)">D&eacute;roulement :</span> Chaque round, on vise le num&eacute;ro du round (round 1 = cible 1, round 2 = cible 2, etc.).</p>
+        <p><span style="color: var(--chalk-cream)">Scoring :</span> Simple = valeur du num&eacute;ro, Double = x2, Triple = x3. Manqu&eacute; = 0 point.</p>
+        <p><span style="color: var(--chalk-cream)">Shanghai :</span> Toucher le simple + double + triple du m&ecirc;me num&eacute;ro dans un m&ecirc;me round = victoire imm&eacute;diate !</p>
+        <p><span style="color: var(--chalk-cream)">Fin de partie :</span> Apr&egrave;s 20 rounds, le joueur avec le plus de points gagne (sauf Shanghai).</p>
+      </template>
+      <template #winner-stats>
+        <div v-if="isShangaiWin" class="col-span-2 text-center mb-1">
+          <div class="text-lg mb-1" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-gold)">Shanghai au Round {{ shangaiRound }}</div>
+          <div class="text-sm" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">Simple + Double + Triple du {{ shangaiRound }}</div>
         </div>
-        <div class="flex justify-center mt-5">
-          <button @click="showRulesModal = false" class="chalk-btn-ghost">Compris !</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal Reset -->
-    <div v-if="showResetModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="chalk-grain rounded-2xl p-8 border-2 border-dashed max-w-md mx-4"
-        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-line)">
-        <h3 class="text-2xl text-center mb-4" style="font-family: var(--font-display); color: var(--chalk-red)">CONFIRMER LE RESET</h3>
-        <p class="text-center mb-6" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-          Remettre &agrave; z&eacute;ro la partie ? <br><span style="color: var(--chalk-red)">Cette action est irr&eacute;versible.</span></p>
-        <div class="flex gap-3 justify-center">
-          <button @click="showResetModal = false" class="chalk-btn-ghost">Annuler</button>
-          <button @click="resetGame" class="chalk-btn-red">Reset</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal Victoire -->
-    <div v-if="showWinnerModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="chalk-grain rounded-2xl p-8 border-2 border-solid max-w-lg mx-4 text-center"
-        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-gold)">
-        <div class="text-5xl mb-4">&#127881;</div>
-        <h2 class="text-4xl mb-4" style="font-family: var(--font-display); color: var(--chalk-gold)">VICTOIRE !</h2>
-        <div class="mb-6">
-          <div class="text-2xl mb-2" style="font-family: var(--font-hand); font-weight: 700">{{ winner?.name }}</div>
-          <div v-if="isShangaiWin" class="text-lg mb-2" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-gold)">SHANGHAI !</div>
-          <div style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">a remport&eacute; la partie !</div>
-        </div>
-
-        <!-- Statistiques du gagnant -->
-        <div class="rounded-xl p-4 mb-6" style="background: rgba(134,199,160,0.1); border: 2px dashed var(--chalk-green)">
-          <div v-if="isShangaiWin" class="text-center mb-3">
-            <div class="text-lg mb-1" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-gold)">Shanghai au Round {{ shangaiRound }}</div>
-            <div class="text-sm" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">Simple + Double + Triple du {{ shangaiRound }}</div>
-          </div>
+        <div class="col-span-2 text-center">
           <div class="text-2xl font-bold" style="color: var(--chalk-green)">{{ winner?.totalScore }}</div>
           <div class="text-sm" style="color: var(--chalk-faint2)">Points marqu&eacute;s au total</div>
         </div>
-
-        <div class="flex gap-3 justify-center">
-          <button @click="showWinnerModal = false" class="chalk-btn-ghost">Continuer</button>
-          <button @click="resetGame" class="chalk-btn-green">Nouvelle partie</button>
-        </div>
-      </div>
-    </div>
+      </template>
+    </GameModals>
   </div>
 </template>
 
 <style scoped>
-.chalk-btn-ghost {
-  font-family: var(--font-hand); font-weight: 600; font-size: 21px;
-  color: var(--chalk-faint); background: transparent;
-  border: 2px dashed var(--chalk-faint); border-radius: 12px;
-  padding: 5px 18px; cursor: pointer; line-height: 1.1; white-space: nowrap;
-}
-.chalk-btn-green {
-  font-family: var(--font-hand); font-weight: 600; font-size: 21px;
-  color: var(--chalk-green); background: transparent;
-  border: 2px solid var(--chalk-green); border-radius: 12px;
-  padding: 5px 18px; cursor: pointer; line-height: 1.1; white-space: nowrap;
-  box-shadow: inset 0 0 0 1px rgba(134,199,160,0.2);
-}
-.chalk-btn-red {
-  font-family: var(--font-hand); font-weight: 600; font-size: 21px;
-  color: var(--chalk-red); background: transparent;
-  border: 2px solid var(--chalk-red); border-radius: 12px;
-  padding: 5px 18px; cursor: pointer; line-height: 1.1; white-space: nowrap;
-}
 .sh-score-btn {
   font-family: var(--font-hand); font-weight: 700; font-size: 24px;
   background: transparent; border: 2px solid; border-radius: 12px;
@@ -303,9 +240,16 @@
 
 <script>
 import firebaseService from '../services/firebaseService.js';
+import fullscreenMixin from '../mixins/fullscreenMixin.js';
+import keyboardUndoMixin from '../mixins/keyboardUndoMixin.js';
+import GameHeader from './shared/GameHeader.vue';
+import GameModals from './shared/GameModals.vue';
+import HistoryPanel from './shared/HistoryPanel.vue';
 
 export default {
   name: "Shanghai",
+  components: { GameHeader, GameModals, HistoryPanel },
+  mixins: [fullscreenMixin, keyboardUndoMixin],
   props: {
     players: {
       type: Array,
@@ -321,7 +265,6 @@ export default {
       scoreType: null,
       history: [],
       gameFinished: false,
-      isFullscreen: false,
       showResetModal: false,
       showRulesModal: false,
       showWinnerModal: false,
@@ -348,6 +291,8 @@ export default {
     }
   },
   methods: {
+    onUndo() { this.undoLastScore(); },
+
     initializePlayers() {
       this.gamePlayers = this.players.map(player => ({
         ...player,
@@ -358,37 +303,37 @@ export default {
         dartsLeft: 3
       }));
     },
-    
-    
+
+
     selectScore(score) {
       this.selectedScore = score;
       if (score === 0) {
         this.scoreType = 'single';
       }
     },
-    
+
     selectTarget() {
       // Au Shanghai, on vise toujours le numéro du round
       this.selectedScore = this.currentRound;
     },
-    
+
     selectMiss() {
       // Sélectionner manqué sans affecter scoreType
       this.selectedScore = 0;
       this.scoreType = 'miss';
     },
-    
+
     checkShanghai(player, roundIndex) {
       // Vérifier si le joueur a fait simple + double + triple du même chiffre
       const hits = player.roundHits[roundIndex];
       return hits.single && hits.double && hits.triple;
     },
-    
+
     addScore() {
       if (!this.canAddScore) return;
-      
+
       let actualScore = 0;
-      
+
       // Au Shanghai, on vise toujours la cible du round
       if (this.scoreType === 'miss') {
         // Manqué
@@ -399,7 +344,7 @@ export default {
         if (this.scoreType === 'double') actualScore *= 2;
         if (this.scoreType === 'triple') actualScore *= 3;
       }
-      
+
       // Enregistrer dans l'historique
       this.history.push({
         player: this.currentPlayer,
@@ -407,16 +352,16 @@ export default {
         score: actualScore,
         type: this.scoreType
       });
-      
+
       // Mettre à jour le score
       this.currentPlayer.roundScores[this.currentRound - 1] += actualScore;
       this.currentPlayer.totalScore += actualScore;
       this.currentPlayer.dartsLeft--;
-      
+
       // Marquer le type de coup si ce n'est pas un manqué
       if (this.scoreType !== 'miss') {
         this.currentPlayer.roundHits[this.currentRound - 1][this.scoreType] = true;
-        
+
         // Vérifier Shanghai (simple + double + triple du même chiffre)
         if (this.checkShanghai(this.currentPlayer, this.currentRound - 1)) {
           this.currentPlayer.winner = true;
@@ -425,36 +370,36 @@ export default {
           this.isShangaiWin = true;
           this.shangaiRound = this.currentRound;
           this.sendVictoryToNotion(this.currentPlayer);
-          
+
           setTimeout(() => {
             this.showWinnerModal = true;
           }, 500);
-          
+
           // Reset du score actuel avant de sortir
           this.selectedScore = null;
           this.scoreType = null;
           return;
         }
       }
-      
+
       // Passer au joueur suivant ou fléchette suivante
       this.nextTurn();
-      
+
       // Reset du score actuel
       this.selectedScore = null;
       this.scoreType = null;
     },
-    
+
     nextTurn() {
       // Si le joueur n'a plus de fléchettes, passer au joueur suivant
       if (this.currentPlayer.dartsLeft === 0) {
         this.currentPlayer.dartsLeft = 3;
         this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.gamePlayers.length;
-        
+
         // Si on revient au premier joueur, passer au round suivant
         if (this.currentPlayerIndex === 0) {
           this.currentRound++;
-          
+
           // Vérifier la fin de partie (après 20 rounds)
           if (this.currentRound > 20) {
             this.checkWin();
@@ -462,40 +407,40 @@ export default {
         }
       }
     },
-    
+
     checkWin() {
       // Trouver le joueur avec le score le plus élevé
       const winner = this.sortedPlayers[0];
-      
+
       this.gameFinished = true;
       this.winner = winner;
       winner.winner = true;
       this.sendVictoryToNotion(winner);
-      
+
       setTimeout(() => {
         this.showWinnerModal = true;
       }, 500);
     },
-    
+
     undoLastScore() {
       if (this.history.length === 0) return;
-      
+
       const lastEntry = this.history.pop();
-      
+
       // Retirer le score du joueur
       lastEntry.player.roundScores[lastEntry.round - 1] -= lastEntry.score;
       lastEntry.player.totalScore -= lastEntry.score;
       lastEntry.player.dartsLeft++;
-      
+
       // Annuler le hit de Shanghai si ce n'était pas un manqué
       if (lastEntry.type !== 'miss') {
         lastEntry.player.roundHits[lastEntry.round - 1][lastEntry.type] = false;
       }
-      
+
       // Revenir au joueur précédent
       this.currentPlayerIndex = this.gamePlayers.findIndex(p => p.id === lastEntry.player.id);
       this.currentRound = lastEntry.round;
-      
+
       // Si le joueur a maintenant plus de 3 fléchettes, c'est qu'on doit revenir au joueur précédent
       if (lastEntry.player.dartsLeft > 3) {
         lastEntry.player.dartsLeft = 1;
@@ -504,7 +449,7 @@ export default {
           this.currentRound--;
         }
       }
-      
+
       this.gameFinished = false;
       this.showWinnerModal = false;
       this.winner = null;
@@ -512,11 +457,11 @@ export default {
       this.shangaiRound = null;
       this.gamePlayers.forEach(p => p.winner = false);
     },
-    
+
     confirmReset() {
       this.showResetModal = true;
     },
-    
+
     resetGame() {
       this.gamePlayers.forEach(player => {
         player.totalScore = 0;
@@ -536,28 +481,6 @@ export default {
       this.winner = null;
       this.isShangaiWin = false;
       this.shangaiRound = null;
-    },
-    
-    toggleFullscreen() {
-      if (!this.isFullscreen) {
-        if (document.documentElement.requestFullscreen) {
-          document.documentElement.requestFullscreen();
-        } else if (document.documentElement.webkitRequestFullscreen) {
-          document.documentElement.webkitRequestFullscreen();
-        } else if (document.documentElement.msRequestFullscreen) {
-          document.documentElement.msRequestFullscreen();
-        }
-        this.isFullscreen = true;
-      } else {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-          document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-          document.msExitFullscreen();
-        }
-        this.isFullscreen = false;
-      }
     },
 
     async sendVictoryToNotion(winner) {

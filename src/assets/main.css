@@ -7,7 +7,16 @@
 html, body, #app {
   overscroll-behavior: none;
   height: 100dvh;
-  overflow: hidden;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Bloquer le scroll uniquement en mode standalone (PWA) */
+.is-standalone,
+.is-standalone body,
+.is-standalone #app,
+.is-standalone main {
+  overflow: hidden !important;
 }
 
 :root {

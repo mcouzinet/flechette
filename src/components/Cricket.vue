@@ -4,19 +4,14 @@
     <!-- Cadre -->
     <div style="position: absolute; inset: 9px; border: 2px solid var(--chalk-line); border-radius: 12px; pointer-events: none; opacity: 0.5"></div>
 
-    <!-- Header -->
-    <header class="flex flex-wrap items-center justify-between gap-2 px-4 xl:px-5 pt-2 xl:pt-3 pb-2 relative" style="border-bottom: 2px dashed var(--chalk-line); margin: 9px 9px 0">
-      <button @click="$parent.currentComponent = null" class="chalk-btn-ghost text-base xl:text-[21px]">&#8249; Retour</button>
-      <div class="flex items-baseline gap-2 min-w-0">
-        <span class="text-xl xl:text-[28px]" style="font-family: var(--font-display); letter-spacing: 0.5px">CRICKET</span>
-        <span class="hidden xl:inline text-[19px] whitespace-nowrap" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-gold)">ferme 20 → 15 + la bulle</span>
-      </div>
-      <div class="flex gap-2 flex-none">
-        <button @click="showRulesModal = true" class="chalk-btn-ghost text-base xl:text-[21px]">? Règles</button>
-        <button @click="toggleFullscreen" class="chalk-btn-ghost hidden xl:block btn-fullscreen">{{ isFullscreen ? 'Quitter' : '&#9974; Plein écran' }}</button>
-        <button @click="confirmReset" class="chalk-btn-green text-base xl:text-[21px]">&#8635; Relancer</button>
-      </div>
-    </header>
+    <GameHeader
+      title="CRICKET"
+      subtitle="ferme 20 → 15 + la bulle"
+      :is-fullscreen="isFullscreen"
+      @back="$parent.currentComponent = null"
+      @show-rules="showRulesModal = true"
+      @toggle-fullscreen="toggleFullscreen"
+      @confirm-reset="confirmReset" />
 
     <!-- Body -->
     <div class="flex-1 min-h-0 flex flex-col xl:grid gap-5 px-4 xl:px-5 py-4 xl:py-5 relative overflow-auto ck-body">
@@ -31,7 +26,7 @@
             <div></div>
             <div v-for="(participant, pi) in participants" :key="'mh'+participant.id" class="text-center pb-2">
               <span class="w-[9px] h-[9px] rounded-full inline-block mb-1" :style="{ background: teamColors[pi % 3], boxShadow: `0 0 6px ${teamColors[pi % 3]}66` }"></span>
-              <div class="text-sm leading-tight" style="font-family: var(--font-hand); font-weight: 600">{{ participant.name }}</div>
+              <div class="text-sm md:text-lg leading-tight" style="font-family: var(--font-hand); font-weight: 600">{{ participant.name }}</div>
             </div>
 
             <!-- Lignes par zone -->
@@ -131,117 +126,56 @@
           </div>
         </div>
 
-        <!-- Historique -->
-        <div class="flex items-center justify-between mt-1">
-          <span class="text-[19px]" style="font-family: var(--font-display); letter-spacing: 0.5px">L'HISTORIQUE</span>
-          <button @click="cancel" :class="history.length ? 'chalk-btn-red' : 'chalk-btn-ghost'" :disabled="history.length === 0">&#8630; Annuler</button>
-        </div>
-        <div class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1.5 chalk-scroll">
-          <div v-if="history.length === 0" class="m-auto text-center py-6 text-[20px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">
-            <div class="text-[30px] opacity-50">&#9998;</div>
-            Aucun coup joué...<br>l'historique s'affichera ici.
-          </div>
-          <div v-for="(entry, index) in [...history].reverse()" :key="index"
-            class="flex items-center gap-2 py-1.5 px-1 text-sm"
-            style="border-bottom: 1.5px dashed var(--chalk-line2)">
-            <span class="w-2 h-2 rounded-full flex-none" :style="{ background: teamColors[participants.indexOf(entry.participant) % 3] }"></span>
-            <span class="flex-1"><b>{{ entry.participant.name }}</b> touche <b>{{ zones[entry.nbr] }}</b></span>
-          </div>
-        </div>
+        <HistoryPanel :history="history" @undo="onUndo">
+          <template #entry="{ entry }">
+            <div class="flex items-center gap-2 text-sm">
+              <span class="w-2 h-2 rounded-full flex-none" :style="{ background: teamColors[participants.indexOf(entry.participant) % 3] }"></span>
+              <span class="flex-1"><b>{{ entry.participant.name }}</b> touche <b>{{ zones[entry.nbr] }}</b></span>
+            </div>
+          </template>
+        </HistoryPanel>
       </aside>
     </div>
 
-    <!-- Modal Règles -->
-    <div v-if="showRulesModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="chalk-grain rounded-2xl p-6 xl:p-8 border-2 border-dashed max-w-lg mx-4 max-h-[80vh] overflow-y-auto chalk-scroll"
-        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-line)">
-        <h3 class="text-2xl text-center mb-4" style="font-family: var(--font-display); color: var(--chalk-gold)">RÈGLES DU CRICKET</h3>
-        <div class="space-y-3 text-[22px] leading-relaxed" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-          <p><span style="color: var(--chalk-cream)">But du jeu :</span> Fermer les 7 zones (20, 19, 18, 17, 16, 15 et Bulle) avant les adversaires, avec le moins de points possible.</p>
-          <p><span style="color: var(--chalk-cream)">Fermer une zone :</span> Toucher 3 fois la zone. Les marques s'affichent : / (1 touche), ✕ (2 touches), ⊘ (fermé).</p>
-          <p><span style="color: var(--chalk-cream)">Marquer des points :</span> Quand ta zone est fermée mais pas celle d'un adversaire, chaque touche supplémentaire lui ajoute des points.</p>
-          <p><span style="color: var(--chalk-cream)">Victoire :</span> Le premier à fermer toutes les zones ET avoir le score le plus bas gagne.</p>
-          <p><span style="color: var(--chalk-cream)">Astuce :</span> Tape sur une case dans la grille pour noter une touche. Backspace pour annuler le dernier coup.</p>
+    <GameModals
+      :show-rules="showRulesModal"
+      :show-reset="showResetModal"
+      :show-winner="showWinnerModal"
+      rules-title="RÈGLES DU CRICKET"
+      :winner-name="winner?.name"
+      @close-rules="showRulesModal = false"
+      @close-reset="showResetModal = false"
+      @confirm-reset="resetGame"
+      @close-winner="showWinnerModal = false"
+      @new-game="resetGame">
+      <template #rules-content>
+        <p><span style="color: var(--chalk-cream)">But du jeu :</span> Fermer les 7 zones (20, 19, 18, 17, 16, 15 et Bulle) avant les adversaires, avec le moins de points possible.</p>
+        <p><span style="color: var(--chalk-cream)">Fermer une zone :</span> Toucher 3 fois la zone. Les marques s'affichent : / (1 touche), ✕ (2 touches), ⊘ (fermé).</p>
+        <p><span style="color: var(--chalk-cream)">Marquer des points :</span> Quand ta zone est fermée mais pas celle d'un adversaire, chaque touche supplémentaire lui ajoute des points.</p>
+        <p><span style="color: var(--chalk-cream)">Victoire :</span> Le premier à fermer toutes les zones ET avoir le score le plus bas gagne.</p>
+        <p><span style="color: var(--chalk-cream)">Astuce :</span> Tape sur une case dans la grille pour noter une touche. Backspace pour annuler le dernier coup.</p>
+      </template>
+      <template #winner-stats>
+        <div>
+          <div class="text-2xl font-bold" style="color: var(--chalk-green)">{{ winner?.score }}</div>
+          <div class="text-sm" style="color: var(--chalk-faint2)">Points</div>
         </div>
-        <div class="flex justify-center mt-5">
-          <button @click="showRulesModal = false" class="chalk-btn-ghost">Compris !</button>
+        <div>
+          <div class="text-2xl font-bold" style="color: var(--chalk-green)">7/7</div>
+          <div class="text-sm" style="color: var(--chalk-faint2)">Zones fermées</div>
         </div>
-      </div>
-    </div>
-
-    <!-- Modal Reset -->
-    <div v-if="showResetModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="chalk-grain rounded-2xl p-8 border-2 border-dashed max-w-md mx-4"
-        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-line)">
-        <h3 class="text-2xl text-center mb-4" style="font-family: var(--font-display); color: var(--chalk-red)">CONFIRMER LE RESET</h3>
-        <p class="text-center mb-6" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-          Remettre à zéro la partie ? <br><span style="color: var(--chalk-red)">Cette action est irréversible.</span></p>
-        <div class="flex gap-3 justify-center">
-          <button @click="showResetModal = false" class="chalk-btn-ghost">Annuler</button>
-          <button @click="resetGame" class="chalk-btn-red">Reset</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal Victoire -->
-    <div v-if="showWinnerModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="chalk-grain rounded-2xl p-8 border-2 border-solid max-w-lg mx-4 text-center"
-        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-gold)">
-        <div class="text-5xl mb-4">&#127881;</div>
-        <h2 class="text-4xl mb-4" style="font-family: var(--font-display); color: var(--chalk-gold)">VICTOIRE !</h2>
-        <div class="mb-6">
-          <div class="text-2xl mb-2" style="font-family: var(--font-hand); font-weight: 700">{{ winner?.name }}</div>
-          <div style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">a remporté la partie !</div>
-        </div>
-        <div class="rounded-xl p-4 mb-6" style="background: rgba(134,199,160,0.1); border: 2px dashed var(--chalk-green)">
-          <div class="grid grid-cols-2 gap-4 text-center">
-            <div>
-              <div class="text-2xl font-bold" style="color: var(--chalk-green)">{{ winner?.score }}</div>
-              <div class="text-sm" style="color: var(--chalk-faint2)">Points</div>
-            </div>
-            <div>
-              <div class="text-2xl font-bold" style="color: var(--chalk-green)">7/7</div>
-              <div class="text-sm" style="color: var(--chalk-faint2)">Zones fermées</div>
-            </div>
-          </div>
-        </div>
-        <div class="flex gap-3 justify-center">
-          <button @click="showWinnerModal = false" class="chalk-btn-ghost">Continuer</button>
-          <button @click="resetGame" class="chalk-btn-green">Nouvelle partie</button>
-        </div>
-      </div>
-    </div>
+      </template>
+    </GameModals>
   </div>
 </template>
 
 <style scoped>
-/* Responsive layout */
 @media (min-width: 1280px) {
   .ck-body { grid-template-columns: 1fr 332px; }
   .ck-sidebar { border-left: 2px dashed var(--chalk-line); }
 }
 @media (max-width: 1279px) {
   .ck-sidebar { border-top: 2px dashed var(--chalk-line); }
-}
-
-.chalk-btn-ghost {
-  font-family: var(--font-hand); font-weight: 600; font-size: 21px;
-  color: var(--chalk-faint); background: transparent;
-  border: 2px dashed var(--chalk-faint); border-radius: 12px;
-  padding: 5px 18px; cursor: pointer; line-height: 1.1; white-space: nowrap;
-}
-.chalk-btn-green {
-  font-family: var(--font-hand); font-weight: 600; font-size: 21px;
-  color: var(--chalk-green); background: transparent;
-  border: 2px solid var(--chalk-green); border-radius: 12px;
-  padding: 5px 18px; cursor: pointer; line-height: 1.1; white-space: nowrap;
-  box-shadow: inset 0 0 0 1px rgba(134,199,160,0.2);
-}
-.chalk-btn-red {
-  font-family: var(--font-hand); font-weight: 600; font-size: 21px;
-  color: var(--chalk-red); background: transparent;
-  border: 2px solid var(--chalk-red); border-radius: 12px;
-  padding: 5px 18px; cursor: pointer; line-height: 1.1; white-space: nowrap;
 }
 .ck-cell:hover { background: rgba(241,230,203,0.05) !important; }
 .ck-legend {
@@ -259,9 +193,16 @@
 
 <script>
 import firebaseService from '../services/firebaseService.js';
+import fullscreenMixin from '../mixins/fullscreenMixin.js';
+import keyboardUndoMixin from '../mixins/keyboardUndoMixin.js';
+import GameHeader from './shared/GameHeader.vue';
+import GameModals from './shared/GameModals.vue';
+import HistoryPanel from './shared/HistoryPanel.vue';
 
 export default {
   name: "Cricket",
+  components: { GameHeader, GameModals, HistoryPanel },
+  mixins: [fullscreenMixin, keyboardUndoMixin],
   props: {
     players: {
       type: Array,
@@ -282,13 +223,11 @@ export default {
       showRulesModal: false,
       showResetModal: false,
       showWinnerModal: false,
-      winner: null,
-      isFullscreen: false
+      winner: null
     };
   },
   mounted() {
     this.initializePlayers();
-    this.addKeyboardListener();
   },
   computed: {
     participantOrdered() {
@@ -296,6 +235,8 @@ export default {
     }
   },
   methods: {
+    onUndo() { this.cancel(); },
+
     initializePlayers() {
       this.participants = this.players.map((player) => ({
         id: player.id,
@@ -321,12 +262,6 @@ export default {
 
     isZoneClosed(zoneIndex) {
       return this.participants.every(p => p.state[zoneIndex] >= 3);
-    },
-
-    addKeyboardListener() {
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace') this.cancel();
-      });
     },
 
     cancel() {
@@ -384,18 +319,6 @@ export default {
           this.sendVictory(winner);
           setTimeout(() => { this.showWinnerModal = true; }, 50);
         }
-      }
-    },
-
-    toggleFullscreen() {
-      if (!this.isFullscreen) {
-        if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
-        else if (document.documentElement.webkitRequestFullscreen) document.documentElement.webkitRequestFullscreen();
-        this.isFullscreen = true;
-      } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        this.isFullscreen = false;
       }
     },
 

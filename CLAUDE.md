@@ -20,7 +20,8 @@ Application web de suivi de scores pour jeux de fléchettes. Déployée sur http
 npm run dev          # Serveur de développement
 npm run build        # Build production dans /dist
 npm run preview      # Preview du build
-npm run deploy       # Déploie sur surge.sh
+npm run deploy       # Déploie sur surge.sh (⚠️ ne passe pas dist/, utiliser la commande ci-dessous)
+# Deploy manuel : npm run build && surge dist/ flechettes.surge.sh
 npm test             # Tests (watch mode)
 npm run test:ui      # Tests avec interface Vitest UI
 npm run test:coverage # Tests avec couverture
@@ -40,6 +41,10 @@ src/
     Horloge.vue              # Autour de l'horloge (1→20→Bulle)
     Killer.vue               # Jeu Killer (élimination)
     Morpion.vue              # Morpion fléchettes (3x3)
+    HalveIt.vue              # Halve-It (cibles imposées, raté = score /2)
+    Bobs27.vue               # Bob's 27 (doubles 1→20→bulle, survie)
+    Baseball.vue             # Baseball (9 manches de runs)
+    CountUp.vue              # Count Up (8 rounds, plus haut score gagne)
     __tests__/               # Tests unitaires par composant
   services/
     firebaseService.js       # Envoi des résultats vers Firestore + fallback localStorage
@@ -58,7 +63,8 @@ src/
 - **Composants** : Options API Vue 3 (pas Composition API)
 - **Navigation** : Pas de vue-router, navigation par état `currentComponent` dans App.vue
 - **Données** : LocalStorage pour joueurs (`flechette-players`), Firestore pour résultats de parties
-- **Style** : Thème sombre, couleur accent `#2cadfe`, gradients `from-gray-800 to-gray-900`
+- **Style** : Thème sombre tableau noir, palette chalk (cream, red, green, gold)
+- **Polices** : La font `--font-hand` (Caveat) rend petit à l'écran → toujours utiliser des tailles généreuses (minimum `text-lg` / 18px, idéalement `text-xl`+ pour les infos importantes). Ne jamais descendre en dessous de `text-base` (16px) pour du texte Caveat.
 - **Props** : Les jeux reçoivent `players` en prop depuis App.vue
 - **Alias** : `@` pointe vers `./src` (configuré dans vite.config.js)
 

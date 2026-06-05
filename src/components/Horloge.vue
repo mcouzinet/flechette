@@ -4,19 +4,14 @@
     <!-- Cadre -->
     <div style="position: absolute; inset: 9px; border: 2px solid var(--chalk-line); border-radius: 12px; pointer-events: none; opacity: 0.5"></div>
 
-    <!-- Header -->
-    <header class="flex flex-wrap items-center justify-between gap-3 px-5 pt-3 pb-2 relative" style="border-bottom: 2px dashed var(--chalk-line); margin: 9px 9px 0">
-      <button @click="$parent.currentComponent = null" class="chalk-btn-ghost text-base xl:text-[21px]">&#8249; Retour</button>
-      <div class="flex items-baseline gap-3 min-w-0">
-        <span class="text-xl xl:text-[28px]" style="font-family: var(--font-display); letter-spacing: 0.5px">HORLOGE</span>
-        <span class="text-[19px] whitespace-nowrap hidden xl:inline" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-gold)">1 &#8594; 20 &#8594; Bulle</span>
-      </div>
-      <div class="flex gap-2 flex-none">
-        <button @click="showRulesModal = true" class="chalk-btn-ghost text-base xl:text-[21px]">? R&egrave;gles</button>
-        <button @click="toggleFullscreen" class="chalk-btn-ghost text-base xl:text-[21px] hidden xl:block btn-fullscreen">{{ isFullscreen ? 'Quitter' : '&#9974; Plein écran' }}</button>
-        <button @click="confirmReset" class="chalk-btn-green text-base xl:text-[21px]">&#8635; Relancer</button>
-      </div>
-    </header>
+    <GameHeader
+      title="HORLOGE"
+      subtitle="1 &#8594; 20 &#8594; Bulle"
+      :is-fullscreen="isFullscreen"
+      @back="$parent.currentComponent = null"
+      @show-rules="showRulesModal = true"
+      @toggle-fullscreen="toggleFullscreen"
+      @confirm-reset="confirmReset" />
 
     <!-- Body -->
     <div class="flex-1 min-h-0 flex flex-col xl:grid gap-5 px-5 py-5 relative overflow-auto hl-body">
@@ -78,10 +73,10 @@
                   }">
                   {{ player.winner ? 'FINI' : (player.currentTarget > 20 ? 'BULLE' : player.currentTarget) }}
                 </div>
-                <div class="text-[15px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">{{ player.currentTarget - 1 }}/21 terminés</div>
+                <div class="text-[15px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">{{ player.currentTarget - 1 }}/21 termin&eacute;s</div>
               </div>
 
-              <!-- Fléchettes restantes -->
+              <!-- Flechettes restantes -->
               <div class="flex justify-center gap-2 mb-3">
                 <div
                   v-for="dart in 3"
@@ -105,17 +100,17 @@
           </div>
         </div>
 
-        <!-- Contrôles de jeu -->
+        <!-- Controles de jeu -->
         <div class="rounded-[14px] p-5" style="border: 2px dashed var(--chalk-line)">
           <h3 class="text-lg xl:text-[22px] mb-1 text-center" style="font-family: var(--font-display); letter-spacing: 0.5px">
             {{ currentPlayer?.name }}
           </h3>
           <div class="text-center mb-4" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
             Cible : <span style="color: var(--chalk-gold)">{{ currentPlayer?.currentTarget > 20 ? 'Bulle (25)' : currentPlayer?.currentTarget }}</span>
-            &mdash; {{ currentPlayer?.dartsLeft }} fléchette{{ currentPlayer?.dartsLeft > 1 ? 's' : '' }} restante{{ currentPlayer?.dartsLeft > 1 ? 's' : '' }}
+            &mdash; {{ currentPlayer?.dartsLeft }} fl&eacute;chette{{ currentPlayer?.dartsLeft > 1 ? 's' : '' }} restante{{ currentPlayer?.dartsLeft > 1 ? 's' : '' }}
           </div>
 
-          <!-- Grille des numéros -->
+          <!-- Grille des numeros -->
           <div class="grid grid-cols-3 lg:grid-cols-7 gap-3 mb-5">
             <button
               v-for="number in targetNumbers"
@@ -144,14 +139,14 @@
             </button>
           </div>
 
-          <!-- Bouton Manqué -->
+          <!-- Bouton Manque -->
           <div class="flex justify-center">
             <button
               @click="miss()"
               :disabled="gameFinished"
               class="chalk-btn-ghost"
               :style="{ opacity: gameFinished ? 0.4 : 1 }">
-              Manqué
+              Manqu&eacute;
             </button>
           </div>
         </div>
@@ -192,127 +187,62 @@
           </div>
         </div>
 
-        <!-- Historique -->
-        <div class="flex items-center justify-between mt-1">
-          <span class="text-[19px]" style="font-family: var(--font-display); letter-spacing: 0.5px">L'HISTORIQUE</span>
-          <button @click="undo" :class="history.length ? 'chalk-btn-red' : 'chalk-btn-ghost'" :disabled="history.length === 0">&#8630; Annuler</button>
-        </div>
-
-        <div class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1.5 chalk-scroll">
-          <div v-if="history.length === 0" class="m-auto text-center py-6 text-[20px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">
-            <div class="text-[30px] opacity-50">&#128336;</div>
-            Aucun coup joué...<br>l'historique s'affichera ici.
-          </div>
-          <div
-            v-for="(entry, index) in [...history].reverse()"
-            :key="index"
-            class="flex items-center gap-3 py-2 px-1"
-            style="border-bottom: 1.5px dashed var(--chalk-line2)">
-
-            <div class="flex-1 text-[16px]" style="font-family: var(--font-hand); font-weight: 600">
-              <span style="color: var(--chalk-gold)">{{ entry.player.name }}</span>
-              <span class="ml-1" style="color: var(--chalk-faint2)">#{{ history.length - index }}</span>
+        <HistoryPanel :history="history" @undo="onUndo">
+          <template #entry="{ entry, index, total }">
+            <div class="flex items-center gap-3">
+              <div class="flex-1 text-[16px]" style="font-family: var(--font-hand); font-weight: 600">
+                <span style="color: var(--chalk-gold)">{{ entry.player.name }}</span>
+                <span class="ml-1" style="color: var(--chalk-faint2)">#{{ total - index }}</span>
+              </div>
+              <div class="w-[44px] h-[44px] rounded-full flex items-center justify-center text-[18px]"
+                :style="{
+                  fontFamily: 'var(--font-display)',
+                  border: entry.hit ? '2px solid var(--chalk-green)' : '2px solid var(--chalk-red)',
+                  color: entry.hit ? 'var(--chalk-green)' : 'var(--chalk-red)',
+                  background: entry.hit ? 'rgba(134,199,160,0.1)' : 'rgba(239,139,111,0.1)'
+                }">
+                {{ entry.hit ? (entry.target > 20 ? 'B' : entry.target) : 'X' }}
+              </div>
             </div>
-            <div class="w-[44px] h-[44px] rounded-full flex items-center justify-center text-[18px]"
-              :style="{
-                fontFamily: 'var(--font-display)',
-                border: entry.hit ? '2px solid var(--chalk-green)' : '2px solid var(--chalk-red)',
-                color: entry.hit ? 'var(--chalk-green)' : 'var(--chalk-red)',
-                background: entry.hit ? 'rgba(134,199,160,0.1)' : 'rgba(239,139,111,0.1)'
-              }">
-              {{ entry.hit ? (entry.target > 20 ? 'B' : entry.target) : 'X' }}
-            </div>
-          </div>
-        </div>
+          </template>
+        </HistoryPanel>
       </aside>
     </div>
 
-    <!-- Modal Règles -->
-    <div v-if="showRulesModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="chalk-grain rounded-2xl p-6 xl:p-8 border-2 border-dashed max-w-lg mx-4 max-h-[80vh] overflow-y-auto chalk-scroll"
-        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-line)">
-        <h3 class="text-2xl text-center mb-4" style="font-family: var(--font-display); color: var(--chalk-gold)">R&Egrave;GLES DE L'HORLOGE</h3>
-        <div class="space-y-3 text-[22px] leading-relaxed" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-          <p><span style="color: var(--chalk-cream)">But du jeu :</span> Toucher les num&eacute;ros de 1 &agrave; 20 dans l'ordre, puis la Bulle (25). Le plus rapide gagne.</p>
-          <p><span style="color: var(--chalk-cream)">Tour de jeu :</span> Chaque joueur lance 3 fl&eacute;chettes par tour.</p>
-          <p><span style="color: var(--chalk-cream)">Progression :</span> Il faut toucher sa cible actuelle pour avancer. Simple, double ou triple comptent tous.</p>
-          <p><span style="color: var(--chalk-cream)">Manqu&eacute; :</span> Si la fl&eacute;chette ne touche pas la cible, elle ne compte pas.</p>
-          <p><span style="color: var(--chalk-cream)">Victoire :</span> Le premier joueur &agrave; toucher tous les num&eacute;ros de 1 &agrave; 20 puis la Bulle gagne.</p>
+    <GameModals
+      :show-rules="showRulesModal"
+      :show-reset="showResetModal"
+      :show-winner="showWinnerModal"
+      rules-title="R&Egrave;GLES DE L'HORLOGE"
+      :winner-name="winner?.name"
+      winner-subtitle="a fait le tour de l'horloge !"
+      @close-rules="showRulesModal = false"
+      @close-reset="showResetModal = false"
+      @confirm-reset="resetGame"
+      @close-winner="showWinnerModal = false"
+      @new-game="resetGame">
+      <template #rules-content>
+        <p><span style="color: var(--chalk-cream)">But du jeu :</span> Toucher les num&eacute;ros de 1 &agrave; 20 dans l'ordre, puis la Bulle (25). Le plus rapide gagne.</p>
+        <p><span style="color: var(--chalk-cream)">Tour de jeu :</span> Chaque joueur lance 3 fl&eacute;chettes par tour.</p>
+        <p><span style="color: var(--chalk-cream)">Progression :</span> Il faut toucher sa cible actuelle pour avancer. Simple, double ou triple comptent tous.</p>
+        <p><span style="color: var(--chalk-cream)">Manqu&eacute; :</span> Si la fl&eacute;chette ne touche pas la cible, elle ne compte pas.</p>
+        <p><span style="color: var(--chalk-cream)">Victoire :</span> Le premier joueur &agrave; toucher tous les num&eacute;ros de 1 &agrave; 20 puis la Bulle gagne.</p>
+      </template>
+      <template #winner-stats>
+        <div>
+          <div class="text-2xl font-bold" style="color: var(--chalk-green)">21/21</div>
+          <div class="text-sm" style="color: var(--chalk-faint2)">Cibles touch&eacute;es</div>
         </div>
-        <div class="flex justify-center mt-5">
-          <button @click="showRulesModal = false" class="chalk-btn-ghost">Compris !</button>
+        <div>
+          <div class="text-2xl font-bold" style="color: var(--chalk-green)">{{ getPlayerDarts(winner) }}</div>
+          <div class="text-sm" style="color: var(--chalk-faint2)">Fl&eacute;chettes lanc&eacute;es</div>
         </div>
-      </div>
-    </div>
-
-    <!-- Modal Reset -->
-    <div v-if="showResetModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="chalk-grain rounded-2xl p-8 border-2 border-dashed max-w-md mx-4"
-        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-line)">
-        <h3 class="text-2xl text-center mb-4" style="font-family: var(--font-display); color: var(--chalk-red)">CONFIRMER LE RESET</h3>
-        <p class="text-center mb-6" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-          Remettre à zéro la partie ? <br><span style="color: var(--chalk-red)">Cette action est irréversible.</span></p>
-        <div class="flex gap-3 justify-center">
-          <button @click="showResetModal = false" class="chalk-btn-ghost">Annuler</button>
-          <button @click="resetGame" class="chalk-btn-red">Reset</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal Victoire -->
-    <div v-if="showWinnerModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="chalk-grain rounded-2xl p-8 border-2 border-solid max-w-lg mx-4 text-center"
-        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-gold)">
-        <div class="text-5xl mb-4">&#127881;</div>
-        <h2 class="text-4xl mb-4" style="font-family: var(--font-display); color: var(--chalk-gold)">VICTOIRE !</h2>
-        <div class="mb-6">
-          <div class="text-2xl mb-2" style="font-family: var(--font-hand); font-weight: 700">{{ winner?.name }}</div>
-          <div style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">a fait le tour de l'horloge !</div>
-        </div>
-
-        <!-- Statistiques du gagnant -->
-        <div class="rounded-xl p-4 mb-6" style="background: rgba(134,199,160,0.1); border: 2px dashed var(--chalk-green)">
-          <div class="grid grid-cols-2 gap-4 text-center">
-            <div>
-              <div class="text-2xl font-bold" style="color: var(--chalk-green)">21/21</div>
-              <div class="text-sm" style="color: var(--chalk-faint2)">Cibles touchées</div>
-            </div>
-            <div>
-              <div class="text-2xl font-bold" style="color: var(--chalk-green)">{{ getPlayerDarts(winner) }}</div>
-              <div class="text-sm" style="color: var(--chalk-faint2)">Fléchettes lancées</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex gap-3 justify-center">
-          <button @click="showWinnerModal = false" class="chalk-btn-ghost">Continuer</button>
-          <button @click="resetGame" class="chalk-btn-green">Nouvelle partie</button>
-        </div>
-      </div>
-    </div>
+      </template>
+    </GameModals>
   </div>
 </template>
 
 <style scoped>
-.chalk-btn-ghost {
-  font-family: var(--font-hand); font-weight: 600; font-size: 21px;
-  color: var(--chalk-faint); background: transparent;
-  border: 2px dashed var(--chalk-faint); border-radius: 12px;
-  padding: 5px 18px; cursor: pointer; line-height: 1.1; white-space: nowrap;
-}
-.chalk-btn-green {
-  font-family: var(--font-hand); font-weight: 600; font-size: 21px;
-  color: var(--chalk-green); background: transparent;
-  border: 2px solid var(--chalk-green); border-radius: 12px;
-  padding: 5px 18px; cursor: pointer; line-height: 1.1; white-space: nowrap;
-  box-shadow: inset 0 0 0 1px rgba(134,199,160,0.2);
-}
-.chalk-btn-red {
-  font-family: var(--font-hand); font-weight: 600; font-size: 21px;
-  color: var(--chalk-red); background: transparent;
-  border: 2px solid var(--chalk-red); border-radius: 12px;
-  padding: 5px 18px; cursor: pointer; line-height: 1.1; white-space: nowrap;
-}
 .horloge-num:hover:not(:disabled) {
   background: rgba(241,230,203,0.06) !important;
 }
@@ -327,9 +257,16 @@
 
 <script>
 import firebaseService from '../services/firebaseService.js';
+import fullscreenMixin from '../mixins/fullscreenMixin.js';
+import keyboardUndoMixin from '../mixins/keyboardUndoMixin.js';
+import GameHeader from './shared/GameHeader.vue';
+import GameModals from './shared/GameModals.vue';
+import HistoryPanel from './shared/HistoryPanel.vue';
 
 export default {
   name: "Horloge",
+  components: { GameHeader, GameModals, HistoryPanel },
+  mixins: [fullscreenMixin, keyboardUndoMixin],
   props: {
     players: {
       type: Array,
@@ -343,7 +280,6 @@ export default {
       history: [],
       targetNumbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25],
       gameFinished: false,
-      isFullscreen: false,
       showResetModal: false,
       showRulesModal: false,
       showWinnerModal: false,
@@ -352,7 +288,6 @@ export default {
   },
   mounted() {
     this.initializePlayers();
-    this.addKeyboardListener();
   },
   computed: {
     currentPlayer() {
@@ -363,6 +298,8 @@ export default {
     }
   },
   methods: {
+    onUndo() { this.undo(); },
+
     initializePlayers() {
       this.gamePlayers = this.players.map(player => ({
         ...player,
@@ -370,14 +307,6 @@ export default {
         dartsLeft: 3,
         winner: false
       }));
-    },
-
-    addKeyboardListener() {
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace') {
-          this.undo();
-        }
-      });
     },
 
     hitTarget(number) {
@@ -397,7 +326,7 @@ export default {
       if (hit) {
         player.currentTarget++;
 
-        // Victoire : a touché la bulle (cible 22 = après bulle)
+        // Victoire : a touche la bulle (cible 22 = apres bulle)
         if (player.currentTarget > 21) {
           player.winner = true;
           this.gameFinished = true;
@@ -485,28 +414,6 @@ export default {
       this.showResetModal = false;
       this.showWinnerModal = false;
       this.winner = null;
-    },
-
-    toggleFullscreen() {
-      if (!this.isFullscreen) {
-        if (document.documentElement.requestFullscreen) {
-          document.documentElement.requestFullscreen();
-        } else if (document.documentElement.webkitRequestFullscreen) {
-          document.documentElement.webkitRequestFullscreen();
-        } else if (document.documentElement.msRequestFullscreen) {
-          document.documentElement.msRequestFullscreen();
-        }
-        this.isFullscreen = true;
-      } else {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-          document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-          document.msExitFullscreen();
-        }
-        this.isFullscreen = false;
-      }
     },
 
     async sendVictory(winner) {

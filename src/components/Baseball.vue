@@ -4,19 +4,14 @@
     <!-- Cadre -->
     <div style="position: absolute; inset: 9px; border: 2px solid var(--chalk-line); border-radius: 12px; pointer-events: none; opacity: 0.5"></div>
 
-    <!-- Header -->
-    <header class="flex flex-wrap items-center justify-between gap-3 px-5 pt-3 pb-2 relative" style="border-bottom: 2px dashed var(--chalk-line); margin: 9px 9px 0">
-      <button @click="$parent.currentComponent = null" class="chalk-btn-ghost">&#8249; Retour</button>
-      <div class="flex items-baseline gap-3 min-w-0">
-        <span class="text-xl xl:text-[28px]" style="font-family: var(--font-display); letter-spacing: 0.5px">BASEBALL</span>
-        <span class="text-[19px] whitespace-nowrap hidden xl:inline" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-gold)">9 manches, vise les numeros</span>
-      </div>
-      <div class="flex gap-2 flex-none">
-        <button @click="showRulesModal = true" class="chalk-btn-ghost text-base xl:text-[21px]">? Règles</button>
-        <button @click="toggleFullscreen" class="chalk-btn-ghost hidden xl:block btn-fullscreen">{{ isFullscreen ? 'Quitter' : '&#9974; Plein écran' }}</button>
-        <button @click="confirmReset" class="chalk-btn-green">&#8635; Relancer</button>
-      </div>
-    </header>
+    <GameHeader
+      title="BASEBALL"
+      subtitle="9 manches, vise les numeros"
+      :is-fullscreen="isFullscreen"
+      @back="$parent.currentComponent = null"
+      @show-rules="showRulesModal = true"
+      @toggle-fullscreen="toggleFullscreen"
+      @confirm-reset="confirmReset" />
 
     <!-- Body -->
     <div class="bb-body flex-1 min-h-0 flex flex-col xl:flex-row gap-5 px-5 py-5 relative">
@@ -24,119 +19,71 @@
       <!-- Zone principale -->
       <section class="flex-1 flex flex-col min-w-0 overflow-auto chalk-scroll">
 
-        <!-- Cartes joueurs -->
-        <div :class="[
-          'grid gap-4 mb-6 pt-4',
-          'grid-cols-1 md:grid-cols-2',
-          gamePlayers.length <= 2 ? 'xl:grid-cols-2' :
-          gamePlayers.length === 3 ? 'xl:grid-cols-3' :
-          'xl:grid-cols-4'
-        ]">
-          <div
-            v-for="(player, index) in gamePlayers"
-            :key="player.id"
-            class="relative rounded-[14px] p-5 transition-all duration-500"
-            :style="{
-              border: currentPlayerIndex === index && !gameFinished
-                ? '2px solid var(--chalk-gold)'
-                : player.winner
-                  ? '2px solid var(--chalk-green)'
-                  : '2px dashed var(--chalk-line)',
-              background: currentPlayerIndex === index && !gameFinished
-                ? 'rgba(236,198,106,0.07)'
-                : player.winner
-                  ? 'rgba(134,199,160,0.07)'
-                  : 'transparent'
-            }">
-
-            <div v-if="currentPlayerIndex === index && !gameFinished"
-                 class="absolute -top-3 right-3 px-3 py-0.5 rounded-full text-sm"
-                 style="font-family: var(--font-hand); font-weight: 700; background: var(--chalk-gold); color: var(--chalk-bg)">
-              A JOUER
+        <!-- Controles de jeu -->
+        <div v-if="!gameFinished" class="rounded-[14px] p-3 xl:p-5 mb-3 xl:mb-5" style="border: 2px dashed var(--chalk-line); background: transparent">
+          <div class="text-center mb-3 xl:mb-4">
+            <div class="text-sm xl:text-base" style="font-family: var(--font-display); letter-spacing: 0.5px; color: var(--chalk-faint)">
+              Manche {{ currentInning + 1 }}/9 &mdash; Cible : <span style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-gold); font-size: 2.5em; vertical-align: middle">{{ currentInning + 1 }}</span>
             </div>
-            <div v-if="player.winner"
-                 class="absolute -top-3 right-3 px-3 py-0.5 rounded-full text-sm"
-                 style="font-family: var(--font-hand); font-weight: 700; background: var(--chalk-green); color: var(--chalk-bg)">
-              GAGNANT
+            <div class="text-3xl xl:text-4xl" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-gold)">
+              {{ currentPlayer?.name }}
             </div>
-
-            <div class="text-center">
-              <h3 class="text-lg xl:text-[24px] mb-3" style="font-family: var(--font-hand); font-weight: 600">{{ player.name }}</h3>
-              <div class="text-4xl xl:text-[52px] leading-none mb-1" style="font-family: var(--font-display)">{{ player.totalScore }}</div>
-              <div class="text-[13px] uppercase tracking-wider mb-3" style="color: var(--chalk-faint2)">Runs</div>
-
-              <div class="flex justify-center gap-2">
-                <div
-                  v-for="dart in 3"
-                  :key="dart"
-                  class="w-3.5 h-3.5 rounded-full transition-all duration-300"
-                  :style="{ background: dart <= player.dartsLeft ? 'var(--chalk-gold)' : 'var(--chalk-line2)' }">
-                </div>
+            <div class="flex gap-1.5 justify-center mt-1">
+              <div v-for="dart in 3" :key="dart"
+                class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full"
+                :style="{ background: dart <= (currentPlayer?.dartsLeft || 0) ? 'var(--chalk-gold)' : 'var(--chalk-line2)' }">
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Controles de jeu -->
-        <div v-if="!gameFinished" class="rounded-[14px] p-5 mb-5" style="border: 2px dashed var(--chalk-line); background: transparent">
-          <h3 class="text-lg xl:text-[22px] mb-1 text-center" style="font-family: var(--font-display); letter-spacing: 0.5px">
-            Manche {{ currentInning + 1 }}/9 - Cible : {{ currentInning + 1 }}
-          </h3>
-          <div class="text-center mb-5" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-            {{ currentPlayer?.name }} - {{ currentPlayer?.dartsLeft }} flechette{{ currentPlayer?.dartsLeft > 1 ? 's' : '' }}
-          </div>
-
-          <div class="flex flex-wrap gap-3 justify-center">
-            <button
-              @click="addRuns(1)"
-              class="chalk-btn-gold">
-              Simple (1 run)
-            </button>
-            <button
-              @click="addRuns(2)"
-              class="chalk-btn-green">
-              Double (2 runs)
-            </button>
-            <button
-              @click="addRuns(3)"
-              class="chalk-btn-red">
-              Triple (3 runs)
-            </button>
-            <button
-              @click="addRuns(0)"
-              class="chalk-btn-ghost">
-              Manque (0)
-            </button>
+          <div class="grid grid-cols-2 gap-3 xl:flex xl:flex-wrap xl:gap-3 xl:justify-center">
+            <button @click="addRuns(1)" class="chalk-btn-gold bb-action-btn">Simple</button>
+            <button @click="addRuns(2)" class="chalk-btn-green bb-action-btn">Double</button>
+            <button @click="addRuns(3)" class="chalk-btn-red bb-action-btn">Triple</button>
+            <button @click="addRuns(0)" class="chalk-btn-ghost bb-action-btn">Manqu&eacute;</button>
           </div>
         </div>
 
         <!-- Tableau des manches -->
-        <div class="overflow-x-auto mt-auto chalk-scroll">
-          <table class="w-full text-sm min-w-[400px]" style="border-collapse: separate; border-spacing: 0">
+        <div class="overflow-x-auto flex-1 chalk-scroll">
+          <table class="w-full" style="border-collapse: separate; border-spacing: 0">
             <thead>
-              <tr style="border-bottom: 2px dashed var(--chalk-line)">
-                <th class="text-left p-2 whitespace-nowrap" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">Manche</th>
-                <th v-for="player in gamePlayers" :key="player.id" class="text-center p-2 whitespace-nowrap" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">{{ player.name }}</th>
+              <tr>
+                <th class="text-left px-2 py-1.5 xl:p-2 text-[13px] xl:text-sm whitespace-nowrap" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2); border-bottom: 2px dashed var(--chalk-line)"></th>
+                <th v-for="player in gamePlayers" :key="player.id"
+                  class="text-center px-2 py-2 xl:p-2 text-base xl:text-lg whitespace-nowrap"
+                  style="font-family: var(--font-hand); font-weight: 600; border-bottom: 2px dashed var(--chalk-line)"
+                  :style="{ color: gamePlayers.indexOf(player) === currentPlayerIndex && !gameFinished ? 'var(--chalk-gold)' : 'var(--chalk-faint2)' }">
+                  {{ player.name }}
+                </th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="inning in 9" :key="inning"
-                  style="border-bottom: 1.5px dashed var(--chalk-line2)">
-                <td class="p-2" :style="{
-                  fontFamily: 'var(--font-hand)', fontWeight: 600,
-                  color: inning - 1 === currentInning && !gameFinished ? 'var(--chalk-gold)' : 'var(--chalk-faint)'
-                }">{{ inning }}</td>
-                <td v-for="player in gamePlayers" :key="player.id" class="text-center p-2">
+                :style="{
+                  background: inning - 1 === currentInning && !gameFinished ? 'rgba(236,198,106,0.06)' : 'transparent'
+                }">
+                <td class="px-2 py-1.5 xl:p-2 text-base xl:text-lg"
+                  style="border-bottom: 1px dashed var(--chalk-line2)"
+                  :style="{
+                    fontFamily: 'var(--font-display)',
+                    color: inning - 1 === currentInning && !gameFinished ? 'var(--chalk-gold)' : 'var(--chalk-faint)'
+                  }">{{ inning }}</td>
+                <td v-for="player in gamePlayers" :key="player.id"
+                  class="text-center px-2 py-1.5 xl:p-2 text-lg xl:text-xl"
+                  style="border-bottom: 1px dashed var(--chalk-line2)">
                   <span v-if="player.inningScores[inning - 1] !== undefined"
-                        :style="{ fontFamily: 'var(--font-hand)', fontWeight: 600, color: player.inningScores[inning - 1] > 0 ? 'var(--chalk-green)' : 'var(--chalk-faint2)' }">
+                    :style="{ fontFamily: 'var(--font-hand)', fontWeight: 600, color: player.inningScores[inning - 1] > 0 ? 'var(--chalk-green)' : 'var(--chalk-faint2)' }">
                     {{ player.inningScores[inning - 1] }}
                   </span>
-                  <span v-else style="color: var(--chalk-line2)">-</span>
+                  <span v-else style="color: var(--chalk-line2)">&middot;</span>
                 </td>
               </tr>
               <tr style="border-top: 2px dashed var(--chalk-line)">
-                <td class="p-2" style="font-family: var(--font-display); letter-spacing: 0.5px">Total</td>
-                <td v-for="player in gamePlayers" :key="player.id" class="text-center p-2 text-lg" style="font-family: var(--font-display); color: var(--chalk-gold)">
+                <td class="px-2 py-2 xl:p-2 text-base xl:text-lg" style="font-family: var(--font-display); letter-spacing: 0.5px">Total</td>
+                <td v-for="player in gamePlayers" :key="player.id"
+                  class="text-center px-2 py-2 xl:p-2 text-xl xl:text-2xl"
+                  style="font-family: var(--font-display); color: var(--chalk-gold)">
                   {{ player.totalScore }}
                 </td>
               </tr>
@@ -170,102 +117,58 @@
         </div>
 
         <!-- Historique -->
-        <div class="flex items-center justify-between mt-1">
-          <span class="text-[19px]" style="font-family: var(--font-display); letter-spacing: 0.5px">L'HISTORIQUE</span>
-          <button @click="undo" :class="history.length ? 'chalk-btn-red' : 'chalk-btn-ghost'" :disabled="history.length === 0">&#8630; Annuler</button>
-        </div>
-
-        <div class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1.5 chalk-scroll">
-          <div v-if="history.length === 0" class="m-auto text-center py-6 text-[20px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">
-            <div class="text-[30px] opacity-50">&#9918;</div>
-            Aucun coup joue
-          </div>
-          <div
-            v-for="(entry, index) in [...history].reverse()"
-            :key="index"
-            class="flex items-center justify-between gap-2 py-1.5 px-1"
-            style="border-bottom: 1.5px dashed var(--chalk-line2)">
-            <div style="font-family: var(--font-hand); font-weight: 600; font-size: 15px">
-              <span style="color: var(--chalk-cream)">{{ entry.player.name }}</span>
-              <div style="color: var(--chalk-faint2); font-size: 13px">M{{ entry.inning + 1 }} - #{{ history.length - index }}</div>
+        <HistoryPanel :history="history" @undo="onUndo">
+          <template #entry="{ entry, index, total }">
+            <div class="flex items-center justify-between gap-2">
+              <div style="font-family: var(--font-hand); font-weight: 600; font-size: 15px">
+                <span style="color: var(--chalk-cream)">{{ entry.player.name }}</span>
+                <div style="color: var(--chalk-faint2); font-size: 13px">M{{ entry.inning + 1 }} - #{{ total - index }}</div>
+              </div>
+              <span class="text-sm px-3 py-0.5 rounded-full"
+                :style="{
+                  fontFamily: 'var(--font-hand)', fontWeight: 600,
+                  color: entry.runs > 0 ? 'var(--chalk-green)' : 'var(--chalk-faint2)',
+                  background: entry.runs > 0 ? 'rgba(134,199,160,0.12)' : 'rgba(241,230,203,0.06)'
+                }">
+                {{ entry.runs }} run{{ entry.runs > 1 ? 's' : '' }}
+              </span>
             </div>
-            <span class="text-sm px-3 py-0.5 rounded-full"
-              :style="{
-                fontFamily: 'var(--font-hand)', fontWeight: 600,
-                color: entry.runs > 0 ? 'var(--chalk-green)' : 'var(--chalk-faint2)',
-                background: entry.runs > 0 ? 'rgba(134,199,160,0.12)' : 'rgba(241,230,203,0.06)'
-              }">
-              {{ entry.runs }} run{{ entry.runs > 1 ? 's' : '' }}
-            </span>
-          </div>
-        </div>
+          </template>
+        </HistoryPanel>
       </aside>
     </div>
 
-    <!-- Modal Règles -->
-    <div v-if="showRulesModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="chalk-grain rounded-2xl p-6 xl:p-8 border-2 border-dashed max-w-lg mx-4 max-h-[80vh] overflow-y-auto chalk-scroll"
-        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-line)">
-        <h3 class="text-2xl text-center mb-4" style="font-family: var(--font-display); color: var(--chalk-gold)">RÈGLES DU BASEBALL</h3>
-        <div class="space-y-3 text-[22px] leading-relaxed" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-          <p><span style="color: var(--chalk-cream)">But du jeu :</span> Marquer le plus de "runs" en 9 manches.</p>
-          <p><span style="color: var(--chalk-cream)">Déroulement :</span> À chaque manche, on vise le numéro de la manche (manche 1 = cible 1, etc.).</p>
-          <p><span style="color: var(--chalk-cream)">Scoring :</span> Simple = 1 run, Double = 2 runs, Triple = 3 runs, Manqué = 0 run.</p>
-          <p><span style="color: var(--chalk-cream)">3 fléchettes par manche,</span> les runs s'additionnent.</p>
-          <p><span style="color: var(--chalk-cream)">Victoire :</span> Après 9 manches, le joueur avec le plus de runs gagne.</p>
-          <p><span style="color: var(--chalk-cream)">Accessible aux débutants :</span> les numéros bas (1-3) sont faciles à toucher !</p>
-        </div>
-        <div class="flex justify-center mt-5">
-          <button @click="showRulesModal = false" class="chalk-btn-ghost">Compris !</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal Reset -->
-    <div v-if="showResetModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="chalk-grain rounded-2xl p-8 border-2 border-dashed max-w-md mx-4"
-        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-line)">
-        <h3 class="text-2xl text-center mb-4" style="font-family: var(--font-display); color: var(--chalk-red)">CONFIRMER LE RESET</h3>
-        <p class="text-center mb-6" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-          Remettre a zero la partie ? <br><span style="color: var(--chalk-red)">Cette action est irreversible.</span>
-        </p>
-        <div class="flex gap-3 justify-center">
-          <button @click="showResetModal = false" class="chalk-btn-ghost">Annuler</button>
-          <button @click="resetGame" class="chalk-btn-red">Reset</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal Victoire -->
-    <div v-if="showWinnerModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="chalk-grain rounded-2xl p-8 border-2 border-solid max-w-lg mx-4 text-center"
-        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-gold)">
-        <div class="text-5xl mb-4">&#127881;</div>
-        <h2 class="text-4xl mb-4" style="font-family: var(--font-display); color: var(--chalk-gold)">VICTOIRE !</h2>
-        <div class="mb-6">
-          <div class="text-2xl mb-2" style="font-family: var(--font-hand); font-weight: 700">{{ winner?.name }}</div>
-          <div style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">remporte le Baseball !</div>
-        </div>
-        <div class="rounded-xl p-4 mb-6" style="background: rgba(134,199,160,0.1); border: 2px dashed var(--chalk-green)">
+    <GameModals
+      :show-rules="showRulesModal"
+      :show-reset="showResetModal"
+      :show-winner="showWinnerModal"
+      rules-title="REGLES DU BASEBALL"
+      :winner-name="winner?.name"
+      winner-subtitle="remporte le Baseball !"
+      @close-rules="showRulesModal = false"
+      @close-reset="showResetModal = false"
+      @confirm-reset="resetGame"
+      @close-winner="showWinnerModal = false"
+      @new-game="resetGame">
+      <template #rules-content>
+        <p><span style="color: var(--chalk-cream)">Le principe :</span> 9 manches, 3 fl&eacute;chettes par manche. A chaque manche, tu vises le num&eacute;ro correspondant : manche 1 = tu vises le 1, manche 2 = tu vises le 2, etc.</p>
+        <p><span style="color: var(--chalk-cream)">Comment marquer :</span> Seul le num&eacute;ro de la manche compte. Si tu touches la zone simple, tu marques 1 run. La zone double = 2 runs. La zone triple = 3 runs. Tout le reste = 0.</p>
+        <p><span style="color: var(--chalk-cream)">Exemple :</span> Manche 5, tu lances 3 fl&eacute;chettes sur le 5. Tu touches un simple et un triple = 4 runs pour cette manche.</p>
+        <p><span style="color: var(--chalk-cream)">Le gagnant :</span> Apr&egrave;s 9 manches, celui qui a le plus de runs au total gagne.</p>
+      </template>
+      <template #winner-stats>
+        <div class="col-span-2">
           <div class="text-2xl" style="font-family: var(--font-display); color: var(--chalk-green)">{{ winner?.totalScore }} runs</div>
           <div class="text-sm mt-1" style="color: var(--chalk-faint2)">Score final</div>
         </div>
-        <div class="flex gap-3 justify-center">
-          <button @click="showWinnerModal = false" class="chalk-btn-ghost">Continuer</button>
-          <button @click="resetGame" class="chalk-btn-green">Nouvelle partie</button>
-        </div>
-      </div>
-    </div>
+      </template>
+    </GameModals>
   </div>
 </template>
 
 <style scoped>
-.chalk-btn-ghost { font-family: var(--font-hand); font-weight: 600; font-size: 16px; color: var(--chalk-faint); background: transparent; border: 2px dashed var(--chalk-faint); border-radius: 12px; padding: 5px 18px; cursor: pointer; line-height: 1.1; white-space: nowrap; }
-.chalk-btn-green { font-family: var(--font-hand); font-weight: 600; font-size: 16px; color: var(--chalk-green); background: transparent; border: 2px solid var(--chalk-green); border-radius: 12px; padding: 5px 18px; cursor: pointer; line-height: 1.1; white-space: nowrap; }
-.chalk-btn-red { font-family: var(--font-hand); font-weight: 600; font-size: 16px; color: var(--chalk-red); background: transparent; border: 2px solid var(--chalk-red); border-radius: 12px; padding: 5px 18px; cursor: pointer; line-height: 1.1; white-space: nowrap; }
-.chalk-btn-gold { font-family: var(--font-hand); font-weight: 600; font-size: 16px; color: var(--chalk-gold); background: transparent; border: 2px solid var(--chalk-gold); border-radius: 12px; padding: 5px 18px; cursor: pointer; line-height: 1.1; white-space: nowrap; }
+.bb-action-btn { font-size: 24px !important; padding: 12px 20px !important; }
 @media (min-width: 1280px) {
-  .chalk-btn-ghost, .chalk-btn-green, .chalk-btn-red, .chalk-btn-gold { font-size: 21px; }
   .bb-sidebar { border-left: 2px dashed var(--chalk-line); width: 332px; flex-shrink: 0; }
 }
 @media (max-width: 1279px) {
@@ -276,9 +179,16 @@
 
 <script>
 import firebaseService from '../services/firebaseService.js';
+import fullscreenMixin from '../mixins/fullscreenMixin.js';
+import keyboardUndoMixin from '../mixins/keyboardUndoMixin.js';
+import GameHeader from './shared/GameHeader.vue';
+import GameModals from './shared/GameModals.vue';
+import HistoryPanel from './shared/HistoryPanel.vue';
 
 export default {
   name: "Baseball",
+  components: { GameHeader, GameModals, HistoryPanel },
+  mixins: [fullscreenMixin, keyboardUndoMixin],
   props: {
     players: {
       type: Array,
@@ -292,7 +202,6 @@ export default {
       currentInning: 0,
       history: [],
       gameFinished: false,
-      isFullscreen: false,
       showRulesModal: false,
       showResetModal: false,
       showWinnerModal: false,
@@ -301,7 +210,6 @@ export default {
   },
   mounted() {
     this.initializePlayers();
-    this.addKeyboardListener();
   },
   computed: {
     currentPlayer() { return this.gamePlayers[this.currentPlayerIndex]; },
@@ -310,6 +218,8 @@ export default {
     }
   },
   methods: {
+    onUndo() { this.undo(); },
+
     initializePlayers() {
       this.gamePlayers = this.players.map(player => ({
         ...player,
@@ -319,12 +229,6 @@ export default {
         currentInningRuns: 0,
         winner: false
       }));
-    },
-
-    addKeyboardListener() {
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace') this.undo();
-      });
     },
 
     addRuns(runs) {
@@ -382,7 +286,7 @@ export default {
 
       if (player.dartsLeft > 3) {
         player.dartsLeft = 1;
-        // Revenir à la manche précédente si nécessaire
+        // Revenir a la manche precedente si necessaire
         delete player.inningScores[lastEntry.inning];
       }
 
@@ -411,18 +315,6 @@ export default {
       this.showResetModal = false;
       this.showWinnerModal = false;
       this.winner = null;
-    },
-
-    toggleFullscreen() {
-      if (!this.isFullscreen) {
-        if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
-        else if (document.documentElement.webkitRequestFullscreen) document.documentElement.webkitRequestFullscreen();
-        this.isFullscreen = true;
-      } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        this.isFullscreen = false;
-      }
     },
 
     async sendVictory(winner) {

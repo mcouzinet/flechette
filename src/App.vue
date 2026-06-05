@@ -1,5 +1,5 @@
 <template>
-  <main class="chalk-grain h-full flex flex-col overflow-hidden"
+  <main class="chalk-grain h-full flex flex-col overflow-y-auto xl:overflow-hidden"
     style="font-family: var(--font-ui); color: var(--chalk-cream); background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%)">
 
     <!-- Cadre pointillé -->
@@ -14,7 +14,7 @@
         <div>
           <div class="flex items-center gap-3">
             <div class="chalk-target w-8 h-8 xl:w-10 xl:h-10"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="currentColor" opacity=".25"/><circle cx="20" cy="20" r="13" fill="var(--chalk-bg, #142019)"/><circle cx="20" cy="20" r="8" fill="currentColor" opacity=".25"/><circle cx="20" cy="20" r="3" fill="currentColor"/></svg></div>
-            <span class="text-3xl xl:text-[44px] tracking-wider" style="font-family: var(--font-display); text-shadow: 0 1px 0 rgba(0,0,0,.3)">FLÉCHETTES</span>
+            <span class="text-3xl xl:text-[44px] tracking-wider" style="font-family: var(--font-display); text-shadow: 0 1px 0 rgba(0,0,0,.3)">STONK</span>
           </div>
           <p class="ml-11 xl:ml-[54px] mt-1 text-lg xl:text-[22px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-gold)">
             Comme au comptoir — on ajoute, on choisit, on lance.</p>
@@ -23,7 +23,7 @@
           <button @click="currentComponent = 'Resultats'" class="chalk-btn" style="color: var(--chalk-faint)">les scores ✦</button>
           <button v-if="!user" @click="showAuthModal = true" class="chalk-btn" style="color: var(--chalk-faint)">connexion</button>
           <div v-else class="flex items-center gap-3">
-            <span class="text-sm" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-gold)">{{ user.email }}</span>
+            <span class="text-lg" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-gold)">{{ user.email }}</span>
             <button @click="logout" class="chalk-btn" style="color: var(--chalk-red)">quitter</button>
           </div>
         </div>
@@ -108,7 +108,7 @@
         style="border-top: 2px dashed var(--chalk-line)">
         <button @click="currentComponent = 'Resultats'" class="chalk-btn" style="color: var(--chalk-faint)">scores ✦</button>
         <button v-if="!user" @click="showAuthModal = true" class="chalk-btn" style="color: var(--chalk-faint)">connexion</button>
-        <span v-else class="text-sm" style="font-family: var(--font-hand); color: var(--chalk-gold)">{{ user.email }}</span>
+        <span v-else class="text-lg" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-gold)">{{ user.email }}</span>
       </div>
     </div>
 
@@ -159,6 +159,7 @@ import Morpion from './components/Morpion.vue';
 import HalveIt from './components/HalveIt.vue';
 import Bobs27 from './components/Bobs27.vue';
 import Baseball from './components/Baseball.vue';
+import CountUp from './components/CountUp.vue';
 import Resultats from './components/Resultats.vue';
 import { auth } from './firebase.js';
 import { sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from 'firebase/auth';
@@ -175,6 +176,7 @@ export default {
     HalveIt,
     Bobs27,
     Baseball,
+    CountUp,
     Resultats
   },
   data() {
@@ -231,6 +233,11 @@ export default {
           id: 'baseball', name: 'Baseball', short: '9 manches de runs',
           description: '9 manches. Simple=1, Double=2, Triple=3 runs.',
           component: 'Baseball'
+        },
+        {
+          id: 'countup', name: 'Count Up', short: '8 rounds, max de points',
+          description: '8 rounds de 3 flechettes. Le plus haut score total gagne.',
+          component: 'CountUp'
         }
       ],
       currentComponent: null,
