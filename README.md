@@ -1,11 +1,14 @@
 # Flechettes
 
-Application web de suivi de scores pour jeux de flechettes. Deployee sur https://flechettes.surge.sh/
+App de scores de flechettes entre potes. 10 jeux, Vue 3, Firebase.
+
+https://flechettes.surge.sh/
 
 ## Jeux disponibles
 
-- **Cricket** - Ferme les zones 20 a 15 + la bulle
-- **301 / 501** - Pars d'un score et tombe a zero pile
+- **Cricket** - Ferme les zones 20 a 15 + la bulle (mode 3 bulles, 1 bulle ou sans)
+- **301 / 501** - Pars d'un score et tombe a zero pile (101 a 1001)
+- **Count Up** - 8 rounds, le plus haut score gagne
 - **Shanghai** - 20 rounds, simple / double / triple
 - **Autour de l'horloge** - Touche 1 a 20 puis la bulle dans l'ordre
 - **Killer** - Deviens killer, elimine les autres
@@ -21,6 +24,17 @@ Application web de suivi de scores pour jeux de flechettes. Deployee sur https:/
 - Tailwind CSS
 - Firebase (auth magic link + Firestore pour les resultats)
 - Deploiement sur Surge.sh
+- PWA (installable sur tablette/mobile)
+
+## Architecture
+
+Composants partages pour eviter la duplication entre les 10 jeux :
+
+- `shared/GameHeader.vue` - Header commun (retour, titre, regles, relancer)
+- `shared/GameModals.vue` - Modals (regles, reset, victoire)
+- `shared/HistoryPanel.vue` - Panneau historique + annuler
+- `mixins/fullscreenMixin.js` - Plein ecran
+- `mixins/keyboardUndoMixin.js` - Backspace pour annuler
 
 ## Commandes
 
