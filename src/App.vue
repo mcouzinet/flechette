@@ -45,7 +45,7 @@
               class="flex items-center gap-3 py-2 px-1"
               style="border-bottom: 1.5px dashed var(--chalk-line)">
               <span class="w-6 text-[22px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">{{ index + 1 }}.</span>
-              <div class="chalk-target w-5 h-5" :style="{ color: playerColors[index % 3] }"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="currentColor" opacity=".25"/><circle cx="20" cy="20" r="13" fill="var(--chalk-bg, #142019)"/><circle cx="20" cy="20" r="8" fill="currentColor" opacity=".25"/><circle cx="20" cy="20" r="3" fill="currentColor"/></svg></div>
+              <div class="chalk-target w-5 h-5" :style="{ color: playerColors[index % playerColors.length] }"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="currentColor" opacity=".25"/><circle cx="20" cy="20" r="13" fill="var(--chalk-bg, #142019)"/><circle cx="20" cy="20" r="8" fill="currentColor" opacity=".25"/><circle cx="20" cy="20" r="3" fill="currentColor"/></svg></div>
               <span class="flex-1 text-[26px] xl:text-[30px] leading-none" style="font-family: var(--font-hand); font-weight: 600">{{ player.name }}</span>
               <button @click="removePlayer(player.id)" class="text-2xl cursor-pointer leading-none bg-transparent border-none p-1" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-faint2)">x</button>
             </div>
@@ -125,10 +125,18 @@
         <p class="text-center mb-6 text-sm" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
           Connecte-toi pour sauvegarder tes résultats. Pas obligatoire pour jouer.</p>
 
-        <div class="space-y-4">
+        <div v-if="isStandalone" class="text-center mb-4 p-4 rounded-xl" style="background: rgba(236,198,106,0.08); border: 1.5px dashed var(--chalk-gold)">
+          <div class="text-base mb-2" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-gold)">Mode app</div>
+          <p class="text-sm" style="font-family: var(--font-ui); color: var(--chalk-faint)">
+            La connexion par lien ne fonctionne pas en mode app. Ouvre
+            <span style="color: var(--chalk-cream)">flechettes.surge.sh</span>
+            dans Safari, connecte-toi la-bas, puis reviens ici.</p>
+        </div>
+
+        <div v-else class="space-y-4">
           <input v-model="authEmail" @keyup.enter="sendMagicLink" type="email" placeholder="ton adresse email"
-            class="w-full bg-transparent py-3 px-2 text-base outline-none"
-            style="border-bottom: 2px solid var(--chalk-line); color: var(--chalk-cream); font-family: var(--font-ui)" />
+            class="w-full bg-transparent py-3 px-2 text-base outline-none border-none rounded-none"
+            style="border-bottom: 2px solid var(--chalk-line); color: var(--chalk-cream); font-family: var(--font-ui); -webkit-appearance: none" />
 
           <button @click="sendMagicLink" :disabled="!authEmail.trim() || authLoading"
             class="chalk-btn-big w-full disabled:opacity-40">
@@ -186,8 +194,9 @@ export default {
       showAuthModal: false,
       authMessage: '',
       authLoading: false,
+      isStandalone: false,
       selectedGame: 'cricket',
-      playerColors: ['var(--chalk-red)', 'var(--chalk-green)', 'var(--chalk-gold)'],
+      playerColors: ['var(--chalk-red)', 'var(--chalk-green)', 'var(--chalk-gold)', 'var(--chalk-blue)', 'var(--chalk-pink)', 'var(--chalk-orange)', 'var(--chalk-purple)', 'var(--chalk-cyan)'],
       games: [
         {
           id: 'cricket', name: 'Cricket', short: 'Ferme 20→15 + bull',
@@ -257,6 +266,7 @@ export default {
     this.initAuth();
     if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
       document.documentElement.classList.add('is-standalone');
+      this.isStandalone = true;
     }
   },
   methods: {
