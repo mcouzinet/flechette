@@ -39,6 +39,11 @@
 .chalk-scroll::-webkit-scrollbar-thumb { background: rgba(241,230,203,0.15); border-radius: 3px; }
 .chalk-scroll::-webkit-scrollbar-thumb:hover { background: rgba(241,230,203,0.25); }
 
+/* Prevent double-tap zoom on touch devices */
+button, select, input, [role="button"] {
+  touch-action: manipulation;
+}
+
 a,
 .green {
   text-decoration: none;
