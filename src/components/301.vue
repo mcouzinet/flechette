@@ -114,7 +114,7 @@
           <h3 class="text-base xl:text-[22px] mb-2 xl:mb-5 text-center" style="font-family: var(--font-display); letter-spacing: 0.5px">SAISIR LE SCORE</h3>
 
           <!-- Selecteur de type -->
-          <div class="flex flex-wrap gap-1.5 mb-3 xl:gap-2 xl:mb-5 justify-center">
+          <div class="grid grid-cols-2 gap-2 mb-3 xl:flex xl:flex-wrap xl:gap-2 xl:mb-5 xl:justify-center">
             <button
               v-for="type in ['single', 'double', 'triple']"
               :key="type"
@@ -276,13 +276,13 @@
   background: var(--chalk-bg); color: var(--chalk-cream);
 }
 .g3-type-btn {
-  font-family: var(--font-hand); font-weight: 600; font-size: 17px;
-  border: 2px solid; border-radius: 10px;
-  padding: 4px 14px; cursor: pointer; line-height: 1.1;
+  font-family: var(--font-display); letter-spacing: 0.5px; font-size: 22px;
+  border: 2px solid; border-radius: 14px;
+  padding: 16px 0; cursor: pointer; line-height: 1.1;
   transition: all 0.2s;
 }
 .g3-type-btn:hover {
-  background: rgba(241,230,203,0.06) !important;
+  background: rgba(241,230,203,0.06);
 }
 .g3-num-btn {
   height: 44px; border: 2px solid; border-radius: 10px;
@@ -290,13 +290,13 @@
   cursor: pointer; transition: all 0.15s; background: transparent;
 }
 .g3-num-btn:hover {
-  background: rgba(241,230,203,0.06) !important;
-  border-color: var(--chalk-gold) !important;
+  background: rgba(241,230,203,0.06);
+  border-color: var(--chalk-gold);
 }
 @media (min-width: 1280px) {
   .g3-body { grid-template-columns: 1fr 332px; }
   .g3-sidebar { border-left: 2px dashed var(--chalk-line); }
-  .g3-type-btn { font-size: 21px; padding: 6px 20px; border-radius: 12px; }
+  .g3-type-btn { font-size: 22px; padding: 16px 24px; border-radius: 14px; }
   .g3-num-btn { height: 54px; font-size: 20px; }
 }
 @media (max-width: 1279px) {
