@@ -1,0 +1,656 @@
+<template>
+  <div class="chalk-grain"
+    style="font-family: var(--font-ui); color: var(--chalk-cream); height: 100%; position: relative; overflow: hidden; display: flex; flex-direction: column; background: radial-gradient(130% 90% at 50% -10%, #20322b, #142019 72%)">
+    <!-- Cadre -->
+    <div style="position: absolute; inset: 9px; border: 2px solid var(--chalk-line); border-radius: 12px; pointer-events: none; opacity: 0.5"></div>
+
+    <!-- Header -->
+    <header class="flex flex-wrap items-center justify-between gap-2 px-4 pt-2 pb-2 xl:gap-3 xl:px-5 xl:pt-3 xl:pb-3 relative" style="border-bottom: 2px dashed var(--chalk-line); margin: 9px 9px 0">
+      <button @click="$parent.currentComponent = null" class="chalk-btn-ghost text-base xl:text-[21px]">&#8249; Retour</button>
+      <div class="flex items-center gap-3 min-w-0">
+        <span class="hidden xl:inline text-xl xl:text-[28px]" style="font-family: var(--font-display); letter-spacing: 0.5px">{{ gameRule }}</span>
+        <select
+          v-model="gameRule"
+          @change="changeGameRule"
+          class="g3-select">
+          <option value="101">101</option>
+          <option value="301">301</option>
+          <option value="401">401</option>
+          <option value="501">501</option>
+          <option value="701">701</option>
+          <option value="1001">1001</option>
+        </select>
+      </div>
+      <div class="flex gap-2 flex-none">
+        <button @click="showRulesModal = true" class="chalk-btn-ghost text-base xl:text-[21px]">? R&egrave;gles</button>
+        <button @click="toggleFullscreen" class="chalk-btn-ghost text-base xl:text-[21px] hidden xl:block">{{ isFullscreen ? 'Quitter' : '&#9974; Plein &eacute;cran' }}</button>
+        <button @click="confirmReset" class="chalk-btn-green text-base xl:text-[21px]">&#8635; Relancer</button>
+      </div>
+    </header>
+
+    <!-- Body -->
+    <div class="flex-1 min-h-0 flex flex-col xl:grid gap-3 px-4 py-3 xl:gap-5 xl:px-5 xl:py-5 relative overflow-auto g3-body">
+
+      <!-- Zone de jeu principale -->
+      <section class="flex flex-col min-w-0 overflow-auto chalk-scroll gap-3 xl:gap-5">
+
+        <!-- Cartes des joueurs -->
+        <div :class="[
+          'grid gap-2 pt-3 xl:gap-5 xl:pt-4',
+          'grid-cols-1 md:grid-cols-2',
+          gamePlayers.length === 1 ? 'xl:grid-cols-1' :
+          gamePlayers.length === 2 ? 'xl:grid-cols-2' :
+          gamePlayers.length === 3 ? 'xl:grid-cols-3' :
+          'xl:grid-cols-4'
+        ]">
+          <div
+            v-for="(player, index) in gamePlayers"
+            :key="player.id"
+            class="relative rounded-[14px] p-2.5 xl:p-5 transition-all duration-300"
+            :style="{
+              border: player.winner
+                ? '2px solid var(--chalk-green)'
+                : currentPlayerIndex === index
+                  ? '2px solid var(--chalk-gold)'
+                  : '2px dashed var(--chalk-line)',
+              background: player.winner
+                ? 'rgba(134,199,160,0.08)'
+                : currentPlayerIndex === index
+                  ? 'rgba(236,198,106,0.06)'
+                  : 'transparent'
+            }">
+
+            <!-- Badge joueur actuel -->
+            <div v-if="currentPlayerIndex === index && !gameFinished"
+              class="absolute -top-2.5 right-2 xl:-top-3 xl:right-3 px-2 py-0.5 xl:px-2.5 rounded-full text-[11px] xl:text-[13px]"
+              style="font-family: var(--font-hand); font-weight: 700; background: var(--chalk-gold); color: var(--chalk-bg)">
+              &Agrave; JOUER
+            </div>
+
+            <!-- Badge gagnant -->
+            <div v-if="player.winner"
+              class="absolute -top-2.5 right-2 xl:-top-3 xl:right-3 px-2 py-0.5 xl:px-2.5 rounded-full text-[11px] xl:text-[13px]"
+              style="font-family: var(--font-hand); font-weight: 700; background: var(--chalk-green); color: var(--chalk-bg)">
+              GAGNANT
+            </div>
+
+            <!-- Mobile: layout horizontal compact -->
+            <div class="flex items-center gap-3 xl:block xl:text-center">
+              <h3 class="text-base xl:text-[26px] xl:mb-3 shrink-0" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-cream)">
+                {{ player.name }}
+              </h3>
+
+              <div class="shrink-0 xl:mb-3">
+                <div class="text-2xl xl:text-[56px] leading-none xl:mb-1 transition-all duration-300"
+                  :style="{
+                    fontFamily: 'var(--font-display)',
+                    color: player.score <= 0 ? 'var(--chalk-green)'
+                      : player.score < 20 ? 'var(--chalk-red)'
+                      : player.score < 50 ? 'var(--chalk-gold)'
+                      : 'var(--chalk-cream)'
+                  }">
+                  {{ player.score }}
+                </div>
+                <div class="hidden xl:block text-[13px] uppercase tracking-wider" style="color: var(--chalk-faint2)">Points restants</div>
+              </div>
+
+              <div class="flex gap-1.5 xl:justify-center xl:gap-2 xl:mb-3 shrink-0">
+                <div
+                  v-for="dart in 3"
+                  :key="dart"
+                  class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full transition-all duration-300"
+                  :style="{
+                    background: dart <= player.dartsLeft ? 'var(--chalk-gold)' : 'var(--chalk-line2)'
+                  }">
+                </div>
+              </div>
+              <div class="text-[13px] xl:text-[15px] ml-auto xl:ml-0 shrink-0" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
+                Moy: {{ getPlayerAverage(player).toFixed(1) }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controles de jeu -->
+        <div class="rounded-[14px] p-3 xl:p-5" style="border: 2px dashed var(--chalk-line)">
+          <h3 class="text-base xl:text-[22px] mb-2 xl:mb-5 text-center" style="font-family: var(--font-display); letter-spacing: 0.5px">SAISIR LE SCORE</h3>
+
+          <!-- Selecteur de type -->
+          <div class="flex flex-wrap gap-1.5 mb-3 xl:gap-2 xl:mb-5 justify-center">
+            <button
+              v-for="type in ['single', 'double', 'triple']"
+              :key="type"
+              @click="scoreType = type"
+              class="g3-type-btn"
+              :style="{
+                color: scoreType === type ? 'var(--chalk-bg)' : 'var(--chalk-faint)',
+                background: scoreType === type ? 'var(--chalk-gold)' : 'transparent',
+                borderColor: scoreType === type ? 'var(--chalk-gold)' : 'var(--chalk-line)'
+              }">
+              {{ type === 'single' ? 'Simple' : type === 'double' ? 'Double' : 'Triple' }}
+            </button>
+
+            <!-- Bouton Manque -->
+            <button
+              @click="selectMiss()"
+              class="g3-type-btn"
+              :style="{
+                color: scoreType === 'miss' ? 'var(--chalk-bg)' : 'var(--chalk-faint)',
+                background: scoreType === 'miss' ? 'var(--chalk-red)' : 'transparent',
+                borderColor: scoreType === 'miss' ? 'var(--chalk-red)' : 'var(--chalk-line)'
+              }">
+              Manqu&eacute;
+            </button>
+          </div>
+
+          <!-- Tableau des numeros -->
+          <div class="grid grid-cols-4 lg:grid-cols-7 gap-1.5 mb-3 xl:gap-2 xl:mb-5">
+            <button
+              v-for="number in dartNumbers"
+              :key="number"
+              @click="selectScore(number)"
+              class="g3-num-btn"
+              :style="{
+                color: selectedScore === number ? 'var(--chalk-bg)' : 'var(--chalk-cream)',
+                background: selectedScore === number ? 'var(--chalk-gold)' : 'transparent',
+                borderColor: selectedScore === number ? 'var(--chalk-gold)' : 'var(--chalk-line)'
+              }">
+              {{ number === 25 ? 'Bulle' : number }}
+            </button>
+          </div>
+
+          <!-- Valider -->
+          <div class="flex justify-center">
+            <button
+              @click="addScore"
+              :disabled="!canAddScore"
+              :class="canAddScore ? 'chalk-btn-green' : 'chalk-btn-ghost'"
+              :style="{ opacity: canAddScore ? 1 : 0.4, cursor: canAddScore ? 'pointer' : 'not-allowed', fontSize: '23px', padding: '8px 28px' }">
+              Valider le score
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panneau historique -->
+      <aside class="flex flex-col gap-2 xl:gap-3 min-h-0 xl:pl-5 pt-3 xl:pt-0 g3-sidebar">
+        <div class="flex items-center justify-between">
+          <span class="text-lg xl:text-[22px]" style="font-family: var(--font-display); letter-spacing: 0.5px">L'HISTORIQUE</span>
+          <button
+            @click="undoLastScore"
+            :class="history.length ? 'chalk-btn-red' : 'chalk-btn-ghost'"
+            :disabled="history.length === 0">
+            &#8630; Annuler
+          </button>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1.5 chalk-scroll">
+          <div v-if="history.length === 0" class="m-auto text-center py-6 text-[20px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">
+            <div class="text-[30px] opacity-50">&#9998;</div>
+            Aucun coup jou&eacute;...<br>l'historique s'affichera ici.
+          </div>
+          <div
+            v-for="(entry, index) in [...history].reverse()"
+            :key="index"
+            class="py-2 px-1"
+            style="border-bottom: 1.5px dashed var(--chalk-line2)">
+
+            <div class="flex justify-between items-start mb-1">
+              <span class="text-[20px]" style="font-family: var(--font-hand); font-weight: 700">{{ entry.playerName }}</span>
+              <span class="text-[13px] px-2 py-0.5 rounded-full" style="color: var(--chalk-faint2); border: 1px solid var(--chalk-line2)">
+                #{{ history.length - index }}
+              </span>
+            </div>
+
+            <div class="flex justify-between items-center mb-1">
+              <div>
+                <span class="text-[18px]" style="font-family: var(--font-display)">{{ entry.score }}</span>
+                <span class="text-[13px] ml-1" style="color: var(--chalk-faint2)">points</span>
+              </div>
+              <div v-if="entry.type !== 'single' && entry.type !== 'miss'"
+                class="px-2 py-0.5 rounded-full text-[13px]"
+                :style="{
+                  fontFamily: 'var(--font-hand)', fontWeight: 600,
+                  color: entry.type === 'double' ? 'var(--chalk-gold)' : 'var(--chalk-red)',
+                  background: entry.type === 'double' ? 'rgba(236,198,106,0.12)' : 'rgba(239,139,111,0.12)'
+                }">
+                {{ entry.type === 'double' ? '2x' : '3x' }} {{ entry.score / (entry.type === 'double' ? 2 : 3) }}
+              </div>
+            </div>
+
+            <div class="flex justify-between text-[14px]" style="color: var(--chalk-faint2)">
+              <span>Score restant:</span>
+              <span style="font-family: var(--font-display)"
+                :style="{
+                  color: entry.remaining === 0 ? 'var(--chalk-green)'
+                    : entry.remaining < 20 ? 'var(--chalk-red)'
+                    : entry.remaining < 50 ? 'var(--chalk-gold)'
+                    : 'var(--chalk-cream)'
+                }">
+                {{ entry.remaining }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Modal Règles -->
+    <div v-if="showRulesModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+      <div class="chalk-grain rounded-2xl p-6 xl:p-8 border-2 border-dashed max-w-lg mx-4 max-h-[80vh] overflow-y-auto chalk-scroll"
+        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-line)">
+        <h3 class="text-2xl text-center mb-4" style="font-family: var(--font-display); color: var(--chalk-gold)">R&Egrave;GLES DU 301</h3>
+        <div class="space-y-3 text-[22px] leading-relaxed" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
+          <p><span style="color: var(--chalk-cream)">But du jeu :</span> Partir d'un score (301, 501...) et atteindre exactement z&eacute;ro.</p>
+          <p><span style="color: var(--chalk-cream)">Tour de jeu :</span> Chaque joueur lance 3 fl&eacute;chettes par tour. Le score touch&eacute; est soustrait du total.</p>
+          <p><span style="color: var(--chalk-cream)">Multiplicateurs :</span> Simple = valeur, Double = x2, Triple = x3. La bulle vaut 25 (simple) ou 50 (double).</p>
+          <p><span style="color: var(--chalk-cream)">Score invalide :</span> Si le score d&eacute;passe le restant, le round est annul&eacute; et les 3 fl&eacute;chettes comptent comme manqu&eacute;es.</p>
+          <p><span style="color: var(--chalk-cream)">Victoire :</span> Le premier joueur &agrave; atteindre exactement 0 gagne.</p>
+        </div>
+        <div class="flex justify-center mt-5">
+          <button @click="showRulesModal = false" class="chalk-btn-ghost">Compris !</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de confirmation Reset -->
+    <div v-if="showResetModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+      <div class="chalk-grain rounded-2xl p-8 border-2 border-dashed max-w-md mx-4"
+        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-line)">
+        <h3 class="text-2xl text-center mb-4" style="font-family: var(--font-display); color: var(--chalk-red)">CONFIRMER LE RESET</h3>
+        <p class="text-center mb-6" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
+          &Ecirc;tes-vous s&ucirc;r de vouloir changer la r&egrave;gle de jeu ? <br>
+          <span style="color: var(--chalk-red)">Cela va remettre &agrave; z&eacute;ro la partie en cours.</span>
+        </p>
+        <div class="flex gap-3 justify-center">
+          <button @click="cancelReset" class="chalk-btn-ghost">Annuler</button>
+          <button @click="resetGame" class="chalk-btn-red">Confirmer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal d'information -->
+    <div v-if="showErrorModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+      <div class="chalk-grain rounded-2xl p-8 border-2 border-dashed max-w-md mx-4"
+        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-line)">
+        <div class="text-center">
+          <div class="text-5xl mb-4"></div>
+          <h3 class="text-2xl mb-4" style="font-family: var(--font-display); color: var(--chalk-gold)">ROUND ANNUL&Eacute;</h3>
+          <p class="text-center mb-6" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
+            {{ errorMessage }}
+          </p>
+          <div class="text-[14px]" style="color: var(--chalk-faint2)">
+            Cette popup se fermera automatiquement...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de victoire -->
+    <div v-if="showWinnerModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+      <div class="chalk-grain rounded-2xl p-8 border-2 border-solid max-w-lg mx-4 text-center"
+        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-gold)">
+        <div class="text-5xl mb-4">&#127881;</div>
+        <h2 class="text-4xl mb-4" style="font-family: var(--font-display); color: var(--chalk-gold)">VICTOIRE !</h2>
+        <div class="mb-6">
+          <div class="text-2xl mb-2" style="font-family: var(--font-hand); font-weight: 700">{{ winner?.name }}</div>
+          <div style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">a remport&eacute; la partie !</div>
+        </div>
+
+        <!-- Statistiques du gagnant -->
+        <div class="rounded-xl p-4 mb-6" style="background: rgba(134,199,160,0.1); border: 2px dashed var(--chalk-green)">
+          <div class="grid grid-cols-2 gap-4 text-center">
+            <div>
+              <div class="text-2xl" style="font-family: var(--font-display); color: var(--chalk-green)">{{ gameRule - (winner?.score || 0) }}</div>
+              <div class="text-sm" style="color: var(--chalk-faint2)">Points marqu&eacute;s</div>
+            </div>
+            <div>
+              <div class="text-2xl" style="font-family: var(--font-display); color: var(--chalk-green)">{{ getPlayerAverage(winner || {}).toFixed(1) }}</div>
+              <div class="text-sm" style="color: var(--chalk-faint2)">Moyenne</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-3 justify-center">
+          <button @click="showWinnerModal = false" class="chalk-btn-ghost">Continuer</button>
+          <button @click="resetGame" class="chalk-btn-green">Nouvelle partie</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.chalk-btn-ghost {
+  font-family: var(--font-hand); font-weight: 600; font-size: 16px;
+  color: var(--chalk-faint); background: transparent;
+  border: 2px dashed var(--chalk-faint); border-radius: 10px;
+  padding: 3px 12px; cursor: pointer; line-height: 1.1; white-space: nowrap;
+}
+.chalk-btn-green {
+  font-family: var(--font-hand); font-weight: 600; font-size: 16px;
+  color: var(--chalk-green); background: transparent;
+  border: 2px solid var(--chalk-green); border-radius: 10px;
+  padding: 3px 12px; cursor: pointer; line-height: 1.1; white-space: nowrap;
+}
+.chalk-btn-red {
+  font-family: var(--font-hand); font-weight: 600; font-size: 16px;
+  color: var(--chalk-red); background: transparent;
+  border: 2px solid var(--chalk-red); border-radius: 10px;
+  padding: 3px 12px; cursor: pointer; line-height: 1.1; white-space: nowrap;
+}
+.g3-select {
+  font-family: var(--font-hand); font-weight: 600; font-size: 19px;
+  color: var(--chalk-cream); background: transparent;
+  border: 2px dashed var(--chalk-line); border-radius: 10px;
+  padding: 3px 12px; cursor: pointer;
+  appearance: auto;
+}
+.g3-select option {
+  background: var(--chalk-bg); color: var(--chalk-cream);
+}
+.g3-type-btn {
+  font-family: var(--font-hand); font-weight: 600; font-size: 17px;
+  border: 2px solid; border-radius: 10px;
+  padding: 4px 14px; cursor: pointer; line-height: 1.1;
+  transition: all 0.2s;
+}
+.g3-type-btn:hover {
+  background: rgba(241,230,203,0.06) !important;
+}
+.g3-num-btn {
+  height: 44px; border: 2px solid; border-radius: 10px;
+  font-family: var(--font-display); font-size: 17px; letter-spacing: 0.5px;
+  cursor: pointer; transition: all 0.15s; background: transparent;
+}
+.g3-num-btn:hover {
+  background: rgba(241,230,203,0.06) !important;
+  border-color: var(--chalk-gold) !important;
+}
+@media (min-width: 1280px) {
+  .g3-body { grid-template-columns: 1fr 332px; }
+  .g3-sidebar { border-left: 2px dashed var(--chalk-line); }
+  .chalk-btn-ghost, .chalk-btn-green, .chalk-btn-red { font-size: 21px; padding: 5px 18px; border-radius: 12px; }
+  .g3-type-btn { font-size: 21px; padding: 6px 20px; border-radius: 12px; }
+  .g3-num-btn { height: 54px; font-size: 20px; }
+}
+@media (max-width: 1279px) {
+  .g3-sidebar { border-top: 2px dashed var(--chalk-line); }
+}
+</style>
+
+<script>
+import firebaseService from '../services/firebaseService.js';
+
+export default {
+  name: "Game301",
+  props: {
+    players: {
+      type: Array,
+      default: () => []
+    }
+  },
+  data() {
+    return {
+      gamePlayers: [],
+      currentPlayerIndex: 0,
+      selectedScore: null,
+      scoreType: 'single',
+      newPlayerName: '',
+      history: [],
+      dartNumbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25],
+      gameFinished: false,
+      isFullscreen: false,
+      gameRule: 301,
+      showResetModal: false,
+      showRulesModal: false,
+      previousGameRule: 301,
+      showErrorModal: false,
+      errorMessage: '',
+      showWinnerModal: false,
+      winner: null
+    };
+  },
+  mounted() {
+    this.initializePlayers();
+  },
+  computed: {
+    currentPlayer() {
+      return this.gamePlayers[this.currentPlayerIndex];
+    },
+    canAddScore() {
+      if (this.selectedScore === null || this.gameFinished) return false;
+      if (this.selectedScore === 25 && this.scoreType === 'triple') return false; // Pas de triple bulle
+      return true;
+    },
+    averageScore() {
+      if (this.history.length === 0) return 0;
+      const total = this.history.reduce((sum, entry) => sum + entry.score, 0);
+      return total / this.history.length;
+    }
+  },
+  methods: {
+    getPlayerAverage(player) {
+      const playerEntries = this.history.filter(entry => entry.playerName === player.name);
+      if (playerEntries.length === 0) return 0;
+      const total = playerEntries.reduce((sum, entry) => sum + entry.score, 0);
+      return total / playerEntries.length;
+    },
+    
+    initializePlayers() {
+      this.gamePlayers = this.players.map(player => ({
+        ...player,
+        score: this.gameRule,
+        dartsLeft: 3,
+        winner: false
+      }));
+    },
+    selectScore(score) {
+      this.selectedScore = score;
+      // Pour "Manqué", pas besoin de sélectionner un type
+      if (score === 0) {
+        this.scoreType = 'single';
+      }
+    },
+    
+    selectMiss() {
+      // Sélectionner manqué sans affecter les autres boutons
+      this.selectedScore = 0;
+      this.scoreType = 'miss';
+    },
+    addScore() {
+      if (!this.canAddScore) return;
+      
+      let actualScore = this.selectedScore;
+      if (this.scoreType === 'miss') {
+        actualScore = 0;
+      } else {
+        if (this.scoreType === 'double') actualScore *= 2;
+        if (this.scoreType === 'triple') actualScore *= 3;
+      }
+      
+      const newScore = this.currentPlayer.score - actualScore;
+      
+      // Vérifier si le score est valide (pas en dessous de 0)
+      if (newScore < 0) {
+        // Score invalide : annuler le round et considérer 3 fléchettes manquées
+        // Afficher la popup d'erreur
+        this.errorMessage = 'Score trop élevé ! Round annulé - 3 fléchettes manquées.';
+        this.showErrorModal = true;
+        
+        // Fermer automatiquement après 5 secondes
+        setTimeout(() => {
+          this.showErrorModal = false;
+        }, 5000);
+        
+        // Calculer le score d'origine (avant le début du tour)
+        const currentTurnEntries = this.history.filter(entry => 
+          entry.playerName === this.currentPlayer.name && 
+          this.currentPlayer.dartsLeft < 3
+        );
+        
+        // Récupérer le score d'origine
+        let originalScore = this.currentPlayer.score;
+        currentTurnEntries.forEach(entry => {
+          originalScore += entry.score; // Annuler les coups précédents du tour
+        });
+        
+        // Remettre le joueur à son score d'origine
+        this.currentPlayer.score = originalScore;
+        
+        // Enregistrer 3 fléchettes manquées dans l'historique
+        for (let i = 0; i < 3; i++) {
+          this.history.push({
+            playerName: this.currentPlayer.name,
+            score: 0,
+            type: 'miss',
+            remaining: originalScore
+          });
+        }
+        
+        // Passer au joueur suivant
+        this.nextPlayer();
+        
+        // Reset du score actuel
+        this.selectedScore = null;
+        this.scoreType = 'single';
+        return;
+      }
+      
+      // Enregistrer dans l'historique
+      this.history.push({
+        playerName: this.currentPlayer.name,
+        score: actualScore,
+        type: this.scoreType,
+        remaining: newScore
+      });
+      
+      // Mettre � jour le score
+      this.currentPlayer.score = newScore;
+      this.currentPlayer.dartsLeft--;
+      
+      // Vérifier la victoire
+      if (newScore === 0) {
+        this.currentPlayer.winner = true;
+        this.gameFinished = true;
+        this.winner = this.currentPlayer;
+        this.sendVictoryToNotion(this.currentPlayer);
+        
+        setTimeout(() => {
+          this.showWinnerModal = true;
+        }, 500);
+      }
+      
+      // Passer au joueur suivant si plus de fl�chettes ou jeu fini
+      if (this.currentPlayer.dartsLeft === 0 || this.gameFinished) {
+        this.nextPlayer();
+      }
+      
+      // Reset du score actuel
+      this.selectedScore = null;
+      this.scoreType = 'single';
+    },
+    
+    
+    nextPlayer() {
+      // Remettre les fl�chettes � 3 pour le joueur actuel
+      this.currentPlayer.dartsLeft = 3;
+      
+      // Passer au joueur suivant (seulement si le jeu n'est pas fini)
+      if (!this.gameFinished) {
+        this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.gamePlayers.length;
+      }
+    },
+    
+    undoLastScore() {
+      if (this.history.length === 0) return;
+      
+      const lastEntry = this.history.pop();
+      
+      // Trouver le joueur correspondant
+      const player = this.gamePlayers.find(p => p.name === lastEntry.playerName);
+      if (player) {
+        // Recalculer le score pr�c�dent
+        player.score = lastEntry.remaining + lastEntry.score;
+        player.dartsLeft++;
+        player.winner = false;
+        this.gameFinished = false;
+        this.showWinnerModal = false;
+        this.winner = null;
+        
+        // Revenir au joueur pr�c�dent si n�cessaire
+        if (player.dartsLeft > 3) {
+          player.dartsLeft = 1;
+          this.currentPlayerIndex = this.gamePlayers.findIndex(p => p.id === player.id);
+        }
+      }
+    },
+    
+    changeGameRule() {
+      // Sauvegarder l'ancienne règle au cas où l'utilisateur annule
+      this.previousGameRule = this.gameRule;
+      // Afficher la popup de confirmation lors du changement de règle
+      this.showResetModal = true;
+    },
+    
+    confirmReset() {
+      this.showResetModal = true;
+    },
+    
+    cancelReset() {
+      // Restaurer l'ancienne règle si l'utilisateur annule
+      this.gameRule = this.previousGameRule;
+      this.showResetModal = false;
+    },
+    
+    resetGame() {
+      this.gamePlayers.forEach(player => {
+        player.score = this.gameRule;
+        player.dartsLeft = 3;
+        player.winner = false;
+      });
+      this.currentPlayerIndex = 0;
+      this.history = [];
+      this.gameFinished = false;
+      this.selectedScore = null;
+      this.scoreType = 'single';
+      this.showResetModal = false;
+      this.showWinnerModal = false;
+      this.winner = null;
+      this.previousGameRule = this.gameRule;
+    },
+    
+    toggleFullscreen() {
+      if (!this.isFullscreen) {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen();
+        } else if (document.documentElement.webkitRequestFullscreen) {
+          document.documentElement.webkitRequestFullscreen();
+        } else if (document.documentElement.msRequestFullscreen) {
+          document.documentElement.msRequestFullscreen();
+        }
+        this.isFullscreen = true;
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen();
+        }
+        this.isFullscreen = false;
+      }
+    },
+
+    async sendVictoryToNotion(winner) {
+      try {
+        const gameData = firebaseService.prepareGameData(winner, this.gamePlayers, this.history, this.gameRule.toString());
+        await firebaseService.sendGameVictory(gameData);
+        console.log('Victoire 301 envoyée vers Firebase avec succès !');
+      } catch (error) {
+        console.warn('Impossible d\'envoyer vers Firebase:', error.message);
+      }
+    }
+  }
+};
+</script>

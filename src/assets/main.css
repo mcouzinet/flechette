@@ -1,0 +1,47 @@
+@import './base.css';
+@import './fonts.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* TABLEAU palette */
+  --chalk-bg: #172420;
+  --chalk-bg2: #1e2e28;
+  --chalk-cream: #f1e6cb;
+  --chalk-red: #ef8b6f;
+  --chalk-green: #86c7a0;
+  --chalk-gold: #ecc66a;
+  --chalk-faint: rgba(241,230,203,0.78);
+  --chalk-faint2: rgba(241,230,203,0.34);
+  --chalk-line: rgba(241,230,203,0.30);
+  --chalk-line2: rgba(241,230,203,0.14);
+
+  --font-display: 'Anton', 'Arial Narrow', sans-serif;
+  --font-ui: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-hand: 'Caveat', cursive;
+  --font-mono: 'Space Mono', ui-monospace, monospace;
+}
+
+/* chalk grain texture */
+.chalk-grain {
+  position: relative;
+}
+.chalk-grain::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  opacity: 0.045; mix-blend-mode: screen;
+}
+
+/* scrollbars tableau theme */
+.chalk-scroll::-webkit-scrollbar { width: 6px; }
+.chalk-scroll::-webkit-scrollbar-track { background: rgba(241,230,203,0.05); border-radius: 3px; }
+.chalk-scroll::-webkit-scrollbar-thumb { background: rgba(241,230,203,0.15); border-radius: 3px; }
+.chalk-scroll::-webkit-scrollbar-thumb:hover { background: rgba(241,230,203,0.25); }
+
+a,
+.green {
+  text-decoration: none;
+  color: var(--chalk-green);
+  transition: 0.4s;
+}
