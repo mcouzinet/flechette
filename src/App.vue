@@ -1,5 +1,5 @@
 <template>
-  <main class="chalk-grain min-h-screen xl:h-screen flex flex-col overflow-hidden"
+  <main class="chalk-grain h-full flex flex-col overflow-hidden"
     style="font-family: var(--font-ui); color: var(--chalk-cream); background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%)">
 
     <!-- Cadre pointillé -->
@@ -54,8 +54,8 @@
           <!-- Ajout joueur -->
           <div class="flex gap-2">
             <input v-model="newPlayerName" @keyup.enter="addPlayer" placeholder="+ ajouter un joueur..."
-              class="flex-1 bg-transparent border-0 py-2 px-1 text-[15px] outline-none"
-              style="border-bottom: 2px solid var(--chalk-line); color: var(--chalk-cream); font-family: var(--font-hand); font-weight: 600; font-size: 18px" />
+              class="flex-1 bg-transparent border-none py-2 px-0 outline-none rounded-none"
+              style="color: var(--chalk-cream); font-family: var(--font-hand); font-weight: 600; font-size: 24px; -webkit-appearance: none" />
             <button @click="addPlayer" class="chalk-btn" style="color: var(--chalk-green)">noter</button>
           </div>
         </div>
@@ -248,6 +248,9 @@ export default {
   mounted() {
     this.loadPlayersFromStorage();
     this.initAuth();
+    if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+      document.documentElement.classList.add('is-standalone');
+    }
   },
   methods: {
     initAuth() {

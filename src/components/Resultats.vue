@@ -1,6 +1,6 @@
 <template>
   <div class="chalk-grain"
-    style="font-family: var(--font-ui); color: var(--chalk-cream); min-height: 100vh; position: relative; display: flex; flex-direction: column; background: radial-gradient(130% 90% at 50% -10%, #20322b, #142019 72%)">
+    style="font-family: var(--font-ui); color: var(--chalk-cream); height: 100%; overflow: hidden; position: relative; display: flex; flex-direction: column; background: radial-gradient(130% 90% at 50% -10%, #20322b, #142019 72%)">
     <!-- Cadre -->
     <div style="position: absolute; inset: 9px; border: 2px solid var(--chalk-line); border-radius: 12px; pointer-events: none; opacity: 0.5"></div>
 

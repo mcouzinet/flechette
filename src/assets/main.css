@@ -4,6 +4,12 @@
 @tailwind components;
 @tailwind utilities;
 
+html, body, #app {
+  overscroll-behavior: none;
+  height: 100dvh;
+  overflow: hidden;
+}
+
 :root {
   /* TABLEAU palette */
   --chalk-bg: #172420;
@@ -38,6 +44,9 @@
 .chalk-scroll::-webkit-scrollbar-track { background: rgba(241,230,203,0.05); border-radius: 3px; }
 .chalk-scroll::-webkit-scrollbar-thumb { background: rgba(241,230,203,0.15); border-radius: 3px; }
 .chalk-scroll::-webkit-scrollbar-thumb:hover { background: rgba(241,230,203,0.25); }
+
+/* Hide fullscreen button in standalone/PWA mode */
+.is-standalone .btn-fullscreen { display: none !important; }
 
 /* Prevent double-tap zoom on touch devices */
 button, select, input, [role="button"] {

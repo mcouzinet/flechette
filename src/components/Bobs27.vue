@@ -13,7 +13,7 @@
       </div>
       <div class="flex gap-2 flex-none">
         <button @click="showRulesModal = true" class="chalk-btn-ghost text-base xl:text-[21px]">? Règles</button>
-        <button @click="toggleFullscreen" class="chalk-btn-ghost hidden xl:block">{{ isFullscreen ? 'Quitter' : '&#9974; Plein écran' }}</button>
+        <button @click="toggleFullscreen" class="chalk-btn-ghost hidden xl:block btn-fullscreen">{{ isFullscreen ? 'Quitter' : '&#9974; Plein écran' }}</button>
         <button @click="confirmReset" class="chalk-btn-green">&#8635; Relancer</button>
       </div>
     </header>
