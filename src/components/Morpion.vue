@@ -90,15 +90,17 @@
 
         <!-- Controles de jeu -->
         <div v-if="!gameFinished" class="rounded-[14px] p-5" style="border: 2px dashed var(--chalk-line); background: rgba(241,230,203,0.03)">
-          <h3 class="text-lg xl:text-[22px] mb-1 text-center" style="font-family: var(--font-hand); font-weight: 700">
-            {{ currentPlayer?.name }}
-            <span :style="{ color: currentPlayerIndex === 0 ? 'var(--chalk-red)' : 'var(--chalk-green)' }">
-              ({{ currentPlayerIndex === 0 ? 'X' : 'O' }})
-            </span>
-          </h3>
-          <p class="text-center mb-4 text-[17px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">
-            Cliquez sur une case ou selectionnez le numero touche
-          </p>
+          <div class="text-center mb-3 xl:mb-4">
+            <div class="text-sm xl:text-base" style="font-family: var(--font-display); letter-spacing: 0.5px; color: var(--chalk-faint)">
+              Selectionnez le numero touche
+            </div>
+            <div class="text-3xl xl:text-4xl mt-1" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-cream)">
+              {{ currentPlayer?.name }}
+              <span :style="{ color: currentPlayerIndex === 0 ? 'var(--chalk-red)' : 'var(--chalk-green)' }">
+                ({{ currentPlayerIndex === 0 ? 'X' : 'O' }})
+              </span>
+            </div>
+          </div>
 
           <!-- Grille de numeros alternatifs -->
           <div class="grid grid-cols-3 gap-2 max-w-[240px] mx-auto">
@@ -107,9 +109,9 @@
               :key="cellIndex"
               @click="claimCell(cellIndex)"
               :disabled="cell.owner !== null || gameFinished"
-              class="morpion-num-btn h-12 rounded-[10px] text-[18px]"
+              class="morpion-num-btn h-[52px] xl:h-[58px] rounded-[14px] text-[20px] xl:text-[22px]"
               :class="cell.owner !== null ? 'morpion-num-btn--taken' : ''"
-              style="font-family: var(--font-display)">
+              style="font-family: var(--font-display); letter-spacing: 0.5px">
               {{ cell.number }}
             </button>
           </div>

@@ -79,11 +79,11 @@
               </div>
               <div class="text-[13px] uppercase tracking-wider" style="color: var(--chalk-faint2)">Points</div>
 
-              <div class="flex justify-center gap-2 mt-3">
+              <div class="flex justify-center gap-1.5 xl:gap-2 mt-3">
                 <div
                   v-for="dart in 3"
                   :key="dart"
-                  class="w-3.5 h-3.5 rounded-full transition-all duration-300"
+                  class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full transition-all duration-300"
                   :style="{ background: dart <= player.dartsLeft ? 'var(--chalk-gold)' : 'var(--chalk-line2)' }">
                 </div>
               </div>
@@ -93,31 +93,34 @@
 
         <!-- Controles de jeu -->
         <div v-if="!gameFinished" class="rounded-[14px] p-5" style="border: 2px dashed var(--chalk-line); background: transparent">
-          <h3 class="text-lg xl:text-[22px] mb-1 text-center" style="font-family: var(--font-display); letter-spacing: 0.5px">
-            Cible : Double {{ currentTarget }}
-            <span class="text-[17px]" style="color: var(--chalk-faint2)">({{ currentTarget * 2 }} pts)</span>
-          </h3>
-          <div class="text-center mb-1 text-[14px]" style="color: var(--chalk-faint2)">
-            Round {{ currentRound + 1 }}/21
-          </div>
-          <div class="text-center mb-5" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-            {{ currentPlayer?.name }} - {{ currentPlayer?.dartsLeft }} flechette{{ currentPlayer?.dartsLeft > 1 ? 's' : '' }}
+          <div class="text-center mb-3 xl:mb-4">
+            <div class="text-sm xl:text-base" style="font-family: var(--font-display); letter-spacing: 0.5px; color: var(--chalk-faint)">
+              Round {{ currentRound + 1 }}/21 &mdash; Cible : <span style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-gold); font-size: 2.5em; vertical-align: middle">D{{ currentTarget }}</span>
+              <span class="text-[17px]" style="color: var(--chalk-faint2)">({{ currentTarget * 2 }} pts)</span>
+            </div>
+            <div class="text-3xl xl:text-4xl mt-1" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-cream)">{{ currentPlayer?.name }}</div>
+            <div class="flex gap-1.5 justify-center mt-2">
+              <div v-for="dart in 3" :key="dart"
+                class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full"
+                :style="{ background: dart <= (currentPlayer?.dartsLeft || 0) ? 'var(--chalk-gold)' : 'var(--chalk-line2)' }">
+              </div>
+            </div>
           </div>
 
-          <div class="flex flex-wrap gap-3 justify-center">
+          <div class="grid grid-cols-2 gap-2 xl:flex xl:flex-wrap xl:gap-3 xl:justify-center">
             <button
               @click="hitDouble()"
               :disabled="currentPlayer?.eliminated"
-              class="chalk-btn-green"
-              :style="{ opacity: currentPlayer?.eliminated ? 0.4 : 1 }">
-              Double {{ currentTarget }} touche ! (+{{ currentTarget * 2 }})
+              class="b27-action-btn"
+              :style="{ opacity: currentPlayer?.eliminated ? 0.4 : 1, color: 'var(--chalk-green)', borderColor: 'var(--chalk-green)' }">
+              Double {{ currentTarget }} touche !
             </button>
             <button
               @click="miss()"
               :disabled="currentPlayer?.eliminated"
-              class="chalk-btn-red"
-              :style="{ opacity: currentPlayer?.eliminated ? 0.4 : 1 }">
-              Manque (-{{ currentTarget * 2 }})
+              class="b27-action-btn"
+              :style="{ opacity: currentPlayer?.eliminated ? 0.4 : 1, color: 'var(--chalk-red)', borderColor: 'var(--chalk-red)' }">
+              Manqu&eacute;
             </button>
           </div>
         </div>
@@ -215,6 +218,15 @@
 </template>
 
 <style scoped>
+.b27-action-btn {
+  font-family: var(--font-display); letter-spacing: 0.5px; font-size: 22px;
+  background: transparent; border: 2px solid; border-radius: 14px;
+  padding: 16px 0; cursor: pointer; line-height: 1.1;
+  transition: all 0.2s;
+}
+.b27-action-btn:hover {
+  background: rgba(241,230,203,0.06);
+}
 @media (min-width: 1280px) {
   .b27-sidebar { border-left: 2px dashed var(--chalk-line); width: 332px; flex-shrink: 0; }
 }

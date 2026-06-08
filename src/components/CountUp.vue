@@ -4,19 +4,14 @@
     <!-- Cadre -->
     <div style="position: absolute; inset: 9px; border: 2px solid var(--chalk-line); border-radius: 12px; pointer-events: none; opacity: 0.5"></div>
 
-    <!-- Header -->
-    <header class="flex flex-wrap items-center justify-between gap-2 px-4 pt-2 pb-2 xl:gap-3 xl:px-5 xl:pt-3 xl:pb-3 relative" style="border-bottom: 2px dashed var(--chalk-line); margin: 9px 9px 0">
-      <button @click="$parent.currentComponent = null" class="cu-btn-ghost text-base xl:text-[21px]">&#8249; Retour</button>
-      <div class="flex items-baseline gap-3 min-w-0">
-        <span class="text-xl xl:text-[28px]" style="font-family: var(--font-display); letter-spacing: 0.5px">COUNT UP</span>
-        <span class="text-[19px] whitespace-nowrap hidden xl:inline" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-gold)">8 rounds · le plus haut score gagne</span>
-      </div>
-      <div class="flex gap-2 flex-none">
-        <button @click="showRulesModal = true" class="cu-btn-ghost text-base xl:text-[21px]">? R&egrave;gles</button>
-        <button @click="toggleFullscreen" class="cu-btn-ghost text-base xl:text-[21px] hidden xl:block btn-fullscreen">{{ isFullscreen ? 'Quitter' : '&#9974; Plein &eacute;cran' }}</button>
-        <button @click="confirmReset" class="cu-btn-green text-base xl:text-[21px]">&#8635; Relancer</button>
-      </div>
-    </header>
+    <GameHeader
+      title="COUNT UP"
+      subtitle="8 rounds &middot; le plus haut score gagne"
+      :is-fullscreen="isFullscreen"
+      @back="$parent.currentComponent = null"
+      @show-rules="showRulesModal = true"
+      @toggle-fullscreen="toggleFullscreen"
+      @confirm-reset="confirmReset" />
 
     <!-- Body -->
     <div class="flex-1 min-h-0 flex flex-col xl:grid gap-3 px-4 py-3 xl:gap-5 xl:px-5 xl:py-5 relative overflow-auto cu-body">
@@ -118,7 +113,7 @@
           <h3 class="text-base xl:text-[22px] mb-2 xl:mb-5 text-center" style="font-family: var(--font-display); letter-spacing: 0.5px">SAISIR LE SCORE</h3>
 
           <!-- Selecteur de type -->
-          <div class="flex flex-wrap gap-1.5 mb-3 xl:gap-2 xl:mb-5 justify-center">
+          <div class="grid grid-cols-2 gap-2 mb-3 xl:flex xl:flex-wrap xl:gap-2 xl:mb-5 xl:justify-center">
             <button
               v-for="type in ['single', 'double', 'triple']"
               :key="type"
@@ -166,7 +161,7 @@
             <button
               @click="addScore"
               :disabled="!canAddScore"
-              :class="canAddScore ? 'cu-btn-green' : 'cu-btn-ghost'"
+              :class="canAddScore ? 'chalk-btn-green' : 'chalk-btn-ghost'"
               :style="{ opacity: canAddScore ? 1 : 0.4, cursor: canAddScore ? 'pointer' : 'not-allowed', fontSize: '23px', padding: '8px 28px' }">
               Valider le score
             </button>
@@ -176,31 +171,12 @@
 
       <!-- Panneau historique -->
       <aside class="flex flex-col gap-2 xl:gap-3 min-h-0 xl:pl-5 pt-3 xl:pt-0 cu-sidebar">
-        <div class="flex items-center justify-between">
-          <span class="text-lg xl:text-[22px]" style="font-family: var(--font-display); letter-spacing: 0.5px">L'HISTORIQUE</span>
-          <button
-            @click="undo"
-            :class="history.length ? 'cu-btn-red' : 'cu-btn-ghost'"
-            :disabled="history.length === 0">
-            &#8630; Annuler
-          </button>
-        </div>
-
-        <div class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1.5 chalk-scroll">
-          <div v-if="history.length === 0" class="m-auto text-center py-6 text-[20px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">
-            <div class="text-[30px] opacity-50">&#9998;</div>
-            Aucun coup jou&eacute;...<br>l'historique s'affichera ici.
-          </div>
-          <div
-            v-for="(entry, index) in [...history].reverse()"
-            :key="index"
-            class="py-2 px-1"
-            style="border-bottom: 1.5px dashed var(--chalk-line2)">
-
+        <HistoryPanel :history="history" @undo="onUndo">
+          <template #entry="{ entry, index, total }">
             <div class="flex justify-between items-start mb-1">
               <span class="text-[20px]" style="font-family: var(--font-hand); font-weight: 700">{{ entry.playerName }}</span>
               <span class="text-[13px] px-2 py-0.5 rounded-full" style="color: var(--chalk-faint2); border: 1px solid var(--chalk-line2)">
-                R{{ entry.round + 1 }} · #{{ history.length - index }}
+                R{{ entry.round + 1 }} &middot; #{{ total - index }}
               </span>
             </div>
 
@@ -219,100 +195,49 @@
                 {{ entry.type === 'double' ? '2x' : '3x' }}
               </div>
             </div>
-          </div>
-        </div>
+          </template>
+        </HistoryPanel>
       </aside>
     </div>
 
-    <!-- Modal Regles -->
-    <div v-if="showRulesModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="chalk-grain rounded-2xl p-6 xl:p-8 border-2 border-dashed max-w-lg mx-4 max-h-[80vh] overflow-y-auto chalk-scroll"
-        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-line)">
-        <h3 class="text-2xl text-center mb-4" style="font-family: var(--font-display); color: var(--chalk-gold)">R&Egrave;GLES DU COUNT UP</h3>
-        <div class="space-y-3 text-[22px] leading-relaxed" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-          <p><span style="color: var(--chalk-cream)">But du jeu :</span> Marquer le plus de points possible en 8 rounds.</p>
-          <p><span style="color: var(--chalk-cream)">Tour de jeu :</span> Chaque joueur lance 3 fl&eacute;chettes par round. Tous les points touch&eacute;s s'additionnent.</p>
-          <p><span style="color: var(--chalk-cream)">Multiplicateurs :</span> Simple = valeur, Double = x2, Triple = x3. La bulle vaut 25 (simple) ou 50 (double).</p>
-          <p><span style="color: var(--chalk-cream)">Victoire :</span> Apr&egrave;s 8 rounds, le joueur avec le plus haut score total gagne.</p>
-          <p><span style="color: var(--chalk-cream)">Id&eacute;al pour :</span> Les d&eacute;butants et l'&eacute;chauffement !</p>
+    <GameModals
+      :show-rules="showRulesModal"
+      :show-reset="showResetModal"
+      :show-winner="showWinnerModal"
+      rules-title="REGLES DU COUNT UP"
+      :winner-name="winner?.name"
+      winner-subtitle="remporte le Count Up !"
+      @close-rules="showRulesModal = false"
+      @close-reset="showResetModal = false"
+      @confirm-reset="resetGame"
+      @close-winner="showWinnerModal = false"
+      @new-game="resetGame">
+      <template #rules-content>
+        <p><span style="color: var(--chalk-cream)">But du jeu :</span> Marquer le plus de points possible en 8 rounds.</p>
+        <p><span style="color: var(--chalk-cream)">Tour de jeu :</span> Chaque joueur lance 3 fl&eacute;chettes par round. Tous les points touch&eacute;s s'additionnent.</p>
+        <p><span style="color: var(--chalk-cream)">Multiplicateurs :</span> Simple = valeur, Double = x2, Triple = x3. La bulle vaut 25 (simple) ou 50 (double).</p>
+        <p><span style="color: var(--chalk-cream)">Victoire :</span> Apr&egrave;s 8 rounds, le joueur avec le plus haut score total gagne.</p>
+        <p><span style="color: var(--chalk-cream)">Id&eacute;al pour :</span> Les d&eacute;butants et l'&eacute;chauffement !</p>
+      </template>
+      <template #winner-stats>
+        <div>
+          <div class="text-2xl" style="font-family: var(--font-display); color: var(--chalk-green)">{{ winner?.totalScore }}</div>
+          <div class="text-sm" style="color: var(--chalk-faint2)">Score total</div>
         </div>
-        <div class="flex justify-center mt-5">
-          <button @click="showRulesModal = false" class="cu-btn-ghost">Compris !</button>
+        <div>
+          <div class="text-2xl" style="font-family: var(--font-display); color: var(--chalk-green)">{{ getPlayerAverage(winner || {}).toFixed(1) }}</div>
+          <div class="text-sm" style="color: var(--chalk-faint2)">Moyenne / fl&eacute;chette</div>
         </div>
-      </div>
-    </div>
-
-    <!-- Modal Reset -->
-    <div v-if="showResetModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="chalk-grain rounded-2xl p-8 border-2 border-dashed max-w-md mx-4"
-        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-line)">
-        <h3 class="text-2xl text-center mb-4" style="font-family: var(--font-display); color: var(--chalk-red)">CONFIRMER LE RESET</h3>
-        <p class="text-center mb-6" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-          Remettre a zero la partie ? <br><span style="color: var(--chalk-red)">Cette action est irreversible.</span>
-        </p>
-        <div class="flex gap-3 justify-center">
-          <button @click="showResetModal = false" class="cu-btn-ghost">Annuler</button>
-          <button @click="resetGame" class="cu-btn-red">Reset</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal Victoire -->
-    <div v-if="showWinnerModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="chalk-grain rounded-2xl p-8 border-2 border-solid max-w-lg mx-4 text-center"
-        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-gold)">
-        <div class="text-5xl mb-4">&#127881;</div>
-        <h2 class="text-4xl mb-4" style="font-family: var(--font-display); color: var(--chalk-gold)">VICTOIRE !</h2>
-        <div class="mb-6">
-          <div class="text-2xl mb-2" style="font-family: var(--font-hand); font-weight: 700">{{ winner?.name }}</div>
-          <div style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">remporte le Count Up !</div>
-        </div>
-
-        <div class="rounded-xl p-4 mb-6" style="background: rgba(134,199,160,0.1); border: 2px dashed var(--chalk-green)">
-          <div class="grid grid-cols-2 gap-4 text-center">
-            <div>
-              <div class="text-2xl" style="font-family: var(--font-display); color: var(--chalk-green)">{{ winner?.totalScore }}</div>
-              <div class="text-sm" style="color: var(--chalk-faint2)">Score total</div>
-            </div>
-            <div>
-              <div class="text-2xl" style="font-family: var(--font-display); color: var(--chalk-green)">{{ getPlayerAverage(winner || {}).toFixed(1) }}</div>
-              <div class="text-sm" style="color: var(--chalk-faint2)">Moyenne / fl&eacute;chette</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex gap-3 justify-center">
-          <button @click="showWinnerModal = false" class="cu-btn-ghost">Continuer</button>
-          <button @click="resetGame" class="cu-btn-green">Nouvelle partie</button>
-        </div>
-      </div>
-    </div>
+      </template>
+    </GameModals>
   </div>
 </template>
 
 <style scoped>
-.cu-btn-ghost {
-  font-family: var(--font-hand); font-weight: 600; font-size: 16px;
-  color: var(--chalk-faint); background: transparent;
-  border: 2px dashed var(--chalk-faint); border-radius: 10px;
-  padding: 3px 12px; cursor: pointer; line-height: 1.1; white-space: nowrap;
-}
-.cu-btn-green {
-  font-family: var(--font-hand); font-weight: 600; font-size: 16px;
-  color: var(--chalk-green); background: transparent;
-  border: 2px solid var(--chalk-green); border-radius: 10px;
-  padding: 3px 12px; cursor: pointer; line-height: 1.1; white-space: nowrap;
-}
-.cu-btn-red {
-  font-family: var(--font-hand); font-weight: 600; font-size: 16px;
-  color: var(--chalk-red); background: transparent;
-  border: 2px solid var(--chalk-red); border-radius: 10px;
-  padding: 3px 12px; cursor: pointer; line-height: 1.1; white-space: nowrap;
-}
 .cu-type-btn {
-  font-family: var(--font-hand); font-weight: 600; font-size: 17px;
-  border: 2px solid; border-radius: 10px;
-  padding: 4px 14px; cursor: pointer; line-height: 1.1;
+  font-family: var(--font-display); letter-spacing: 0.5px; font-size: 22px;
+  border: 2px solid; border-radius: 14px;
+  padding: 16px 0; cursor: pointer; line-height: 1.1;
   transition: all 0.2s;
 }
 .cu-type-btn:hover {
@@ -330,8 +255,7 @@
 @media (min-width: 1280px) {
   .cu-body { grid-template-columns: 1fr 332px; }
   .cu-sidebar { border-left: 2px dashed var(--chalk-line); }
-  .cu-btn-ghost, .cu-btn-green, .cu-btn-red { font-size: 21px; padding: 5px 18px; border-radius: 12px; }
-  .cu-type-btn { font-size: 21px; padding: 6px 20px; border-radius: 12px; }
+  .cu-type-btn { font-size: 22px; padding: 16px 24px; border-radius: 14px; }
   .cu-num-btn { height: 54px; font-size: 20px; }
 }
 @media (max-width: 1279px) {
@@ -341,9 +265,16 @@
 
 <script>
 import firebaseService from '../services/firebaseService.js';
+import fullscreenMixin from '../mixins/fullscreenMixin.js';
+import keyboardUndoMixin from '../mixins/keyboardUndoMixin.js';
+import GameHeader from './shared/GameHeader.vue';
+import GameModals from './shared/GameModals.vue';
+import HistoryPanel from './shared/HistoryPanel.vue';
 
 export default {
   name: "CountUp",
+  components: { GameHeader, GameModals, HistoryPanel },
+  mixins: [fullscreenMixin, keyboardUndoMixin],
   props: {
     players: {
       type: Array,
@@ -361,7 +292,6 @@ export default {
       dartNumbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25],
       history: [],
       gameFinished: false,
-      isFullscreen: false,
       showRulesModal: false,
       showResetModal: false,
       showWinnerModal: false,
@@ -370,10 +300,6 @@ export default {
   },
   mounted() {
     this.initializePlayers();
-    document.addEventListener('keydown', this.handleKeydown);
-  },
-  beforeUnmount() {
-    document.removeEventListener('keydown', this.handleKeydown);
   },
   computed: {
     currentPlayer() {
@@ -388,9 +314,7 @@ export default {
     }
   },
   methods: {
-    handleKeydown(e) {
-      if (e.key === 'Backspace') this.undo();
-    },
+    onUndo() { this.undo(); },
 
     initializePlayers() {
       this.gamePlayers = this.players.map(player => ({
@@ -514,18 +438,6 @@ export default {
       this.winner = null;
       this.selectedScore = null;
       this.scoreType = 'single';
-    },
-
-    toggleFullscreen() {
-      if (!this.isFullscreen) {
-        if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
-        else if (document.documentElement.webkitRequestFullscreen) document.documentElement.webkitRequestFullscreen();
-        this.isFullscreen = true;
-      } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        this.isFullscreen = false;
-      }
     },
 
     async sendVictory(winner) {

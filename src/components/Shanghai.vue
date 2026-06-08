@@ -73,14 +73,13 @@
               </div>
 
               <!-- Flechettes restantes -->
-              <div class="flex justify-center gap-2 mb-3">
+              <div class="flex justify-center gap-1.5 xl:gap-2 mb-3">
                 <div
                   v-for="dart in 3"
                   :key="dart"
-                  class="w-3.5 h-3.5 rounded-full transition-all duration-300"
+                  class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full transition-all duration-300"
                   :style="{
-                    background: dart <= player.dartsLeft ? 'var(--chalk-gold)' : 'var(--chalk-line2)',
-                    boxShadow: dart <= player.dartsLeft ? '0 0 6px rgba(236,198,106,0.4)' : 'none'
+                    background: dart <= player.dartsLeft ? 'var(--chalk-gold)' : 'var(--chalk-line2)'
                   }">
                 </div>
               </div>
@@ -106,16 +105,21 @@
 
         <!-- Controles de jeu -->
         <div class="rounded-[14px] p-6" style="border: 2px dashed var(--chalk-line)">
-          <h3 class="text-lg xl:text-[24px] mb-4 text-center" style="font-family: var(--font-display); letter-spacing: 0.5px">
-            ROUND {{ currentRound }}/20 &mdash; CIBLE : {{ currentRound }}
-          </h3>
-          <div v-if="currentPlayer" class="text-center mb-4">
-            <div class="text-lg xl:text-[22px]" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-gold)">{{ currentPlayer.name }}</div>
-            <div class="text-[16px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">{{ currentPlayer.dartsLeft }} fl&eacute;chette{{ currentPlayer.dartsLeft > 1 ? 's' : '' }} restante{{ currentPlayer.dartsLeft > 1 ? 's' : '' }}</div>
+          <div class="text-center mb-4">
+            <div class="text-sm xl:text-base" style="font-family: var(--font-display); letter-spacing: 0.5px; color: var(--chalk-faint)">
+              Round {{ currentRound }}/20 &mdash; Cible : <span class="text-[2.5em] align-middle" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-gold)">{{ currentRound }}</span>
+            </div>
+            <div v-if="currentPlayer" class="text-3xl xl:text-4xl mt-1" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-cream)">{{ currentPlayer.name }}</div>
+            <div v-if="currentPlayer" class="flex gap-1.5 justify-center mt-2">
+              <div v-for="dart in 3" :key="dart"
+                class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full"
+                :style="{ background: dart <= currentPlayer.dartsLeft ? 'var(--chalk-gold)' : 'var(--chalk-line2)' }">
+              </div>
+            </div>
           </div>
 
           <!-- Selecteur de type -->
-          <div class="flex flex-wrap gap-3 justify-center">
+          <div class="grid grid-cols-2 gap-2 xl:flex xl:flex-wrap xl:gap-3 xl:justify-center">
             <button
               v-for="type in ['single', 'double', 'triple']"
               :key="type"
@@ -221,13 +225,13 @@
 
 <style scoped>
 .sh-score-btn {
-  font-family: var(--font-hand); font-weight: 700; font-size: 24px;
-  background: transparent; border: 2px solid; border-radius: 12px;
-  padding: 10px 28px; cursor: pointer; line-height: 1.1;
-  transition: background 0.2s;
+  font-family: var(--font-display); letter-spacing: 0.5px; font-size: 22px;
+  background: transparent; border: 2px solid; border-radius: 14px;
+  padding: 16px 0; cursor: pointer; line-height: 1.1;
+  transition: all 0.2s;
 }
 .sh-score-btn:hover {
-  background: rgba(241,230,203,0.05);
+  background: rgba(241,230,203,0.06);
 }
 @media (min-width: 1280px) {
   .sh-body { grid-template-columns: 1fr 332px; }

@@ -85,7 +85,7 @@
               <div class="chalk-target w-8 h-8" :style="{ color: selectedGame === game.id ? 'var(--chalk-gold)' : 'var(--chalk-cream)' }"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="currentColor" opacity=".25"/><circle cx="20" cy="20" r="13" fill="var(--chalk-bg, #142019)"/><circle cx="20" cy="20" r="8" fill="currentColor" opacity=".25"/><circle cx="20" cy="20" r="3" fill="currentColor"/></svg></div>
 
               <div class="tracking-wide text-lg xl:text-xl" style="font-family: var(--font-display); color: var(--chalk-cream)">{{ game.name }}</div>
-              <div class="text-[17px] leading-snug" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
+              <div class="text-[20px] xl:text-[22px] leading-snug" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
                 {{ game.component ? game.short : 'bientôt dispo' }}</div>
 
               <span v-if="selectedGame === game.id" class="absolute -top-3 right-3 px-2.5 py-0.5 rounded-full text-[13px]"

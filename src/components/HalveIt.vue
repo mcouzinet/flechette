@@ -60,11 +60,11 @@
               <div class="text-[13px] uppercase tracking-wider" style="color: var(--chalk-faint2)">Points</div>
 
               <!-- Flechettes restantes -->
-              <div class="flex justify-center gap-2 mt-3">
+              <div class="flex justify-center gap-1.5 xl:gap-2 mt-3">
                 <div
                   v-for="dart in 3"
                   :key="dart"
-                  class="w-3.5 h-3.5 rounded-full transition-all duration-300"
+                  class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full transition-all duration-300"
                   :style="{ background: dart <= player.dartsLeft ? 'var(--chalk-gold)' : 'var(--chalk-line2)' }">
                 </div>
               </div>
@@ -74,52 +74,64 @@
 
         <!-- Controles de jeu -->
         <div v-if="!gameFinished" class="rounded-[14px] p-5 mb-5" style="border: 2px dashed var(--chalk-line); background: transparent">
-          <h3 class="text-lg xl:text-[22px] mb-1 text-center" style="font-family: var(--font-display); letter-spacing: 0.5px">
-            Round {{ currentRound + 1 }}/{{ rounds.length }} - Cible : {{ currentTarget.label }}
-          </h3>
-          <div class="text-center mb-5" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-            {{ currentPlayer?.name }} - {{ currentPlayer?.dartsLeft }} flechette{{ currentPlayer?.dartsLeft > 1 ? 's' : '' }} restante{{ currentPlayer?.dartsLeft > 1 ? 's' : '' }}
+          <div class="text-center mb-3 xl:mb-4">
+            <div class="text-sm xl:text-base" style="font-family: var(--font-display); letter-spacing: 0.5px; color: var(--chalk-faint)">
+              Round {{ currentRound + 1 }}/{{ rounds.length }} &mdash; Cible : <span style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-gold); font-size: 2.5em; vertical-align: middle">{{ currentTarget.label }}</span>
+            </div>
+            <div class="text-3xl xl:text-4xl mt-1" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-cream)">{{ currentPlayer?.name }}</div>
+            <div class="flex gap-1.5 justify-center mt-2">
+              <div v-for="dart in 3" :key="dart"
+                class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full"
+                :style="{ background: dart <= (currentPlayer?.dartsLeft || 0) ? 'var(--chalk-gold)' : 'var(--chalk-line2)' }">
+              </div>
+            </div>
           </div>
 
           <!-- Boutons de score -->
-          <div class="flex flex-wrap gap-3 justify-center">
+          <div class="grid grid-cols-2 gap-2 xl:flex xl:flex-wrap xl:gap-3 xl:justify-center">
             <button
               v-if="currentTarget.type === 'number'"
               @click="hitTarget(currentTarget.value)"
-              class="chalk-btn-green">
+              class="hi-action-btn"
+              style="color: var(--chalk-green); border-color: var(--chalk-green)">
               {{ currentTarget.value }} touche !
             </button>
 
             <button
               v-if="currentTarget.type === 'double'"
               @click="hitTarget(currentTarget.value * 2)"
-              class="chalk-btn-gold">
+              class="hi-action-btn"
+              style="color: var(--chalk-gold); border-color: var(--chalk-gold)">
               Double {{ currentTarget.value }} touche !
             </button>
 
             <button
               v-if="currentTarget.type === 'triple'"
               @click="hitTarget(currentTarget.value * 3)"
-              class="chalk-btn-red">
+              class="hi-action-btn"
+              style="color: var(--chalk-red); border-color: var(--chalk-red)">
               Triple {{ currentTarget.value }} touche !
             </button>
 
             <button
               v-if="currentTarget.type === 'bull'"
               @click="hitTarget(25)"
-              class="chalk-btn-green">
+              class="hi-action-btn"
+              style="color: var(--chalk-green); border-color: var(--chalk-green)">
               Simple bulle (25)
             </button>
             <button
               v-if="currentTarget.type === 'bull'"
               @click="hitTarget(50)"
-              class="chalk-btn-gold">
+              class="hi-action-btn"
+              style="color: var(--chalk-gold); border-color: var(--chalk-gold)">
               Double bulle (50)
             </button>
 
             <button
               @click="miss()"
-              class="chalk-btn-ghost">
+              class="hi-action-btn"
+              style="color: var(--chalk-faint); border-color: var(--chalk-faint); border-style: dashed">
               Manque
             </button>
           </div>
@@ -233,9 +245,16 @@
 </template>
 
 <style scoped>
-.chalk-btn-gold { font-family: var(--font-hand); font-weight: 600; font-size: 16px; color: var(--chalk-gold); background: transparent; border: 2px solid var(--chalk-gold); border-radius: 12px; padding: 5px 18px; cursor: pointer; line-height: 1.1; white-space: nowrap; }
+.hi-action-btn {
+  font-family: var(--font-display); letter-spacing: 0.5px; font-size: 22px;
+  background: transparent; border: 2px solid; border-radius: 14px;
+  padding: 16px 0; cursor: pointer; line-height: 1.1;
+  transition: all 0.2s;
+}
+.hi-action-btn:hover {
+  background: rgba(241,230,203,0.06);
+}
 @media (min-width: 1280px) {
-  .chalk-btn-gold { font-size: 21px; }
   .hi-sidebar { border-left: 2px dashed var(--chalk-line); width: 332px; flex-shrink: 0; }
 }
 @media (max-width: 1279px) {

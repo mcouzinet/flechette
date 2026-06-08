@@ -29,6 +29,11 @@ html, body, #app {
   --chalk-gold: #ecc66a;
   --chalk-faint: rgba(241,230,203,0.78);
   --chalk-faint2: rgba(241,230,203,0.34);
+  --chalk-blue: #6fb5ef;
+  --chalk-pink: #ef8fbf;
+  --chalk-orange: #efad6f;
+  --chalk-purple: #b58fef;
+  --chalk-cyan: #6fd9d9;
   --chalk-line: rgba(241,230,203,0.30);
   --chalk-line2: rgba(241,230,203,0.14);
 

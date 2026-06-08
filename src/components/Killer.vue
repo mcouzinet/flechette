@@ -73,9 +73,10 @@
           <div v-if="setupPlayerIndex < gamePlayers.length"
                class="rounded-[14px] p-5"
                style="border: 2px dashed var(--chalk-line); background: rgba(241,230,203,0.03)">
-            <h3 class="text-lg xl:text-[22px] mb-4 text-center" style="font-family: var(--font-hand); font-weight: 700">
-              {{ gamePlayers[setupPlayerIndex].name }} <span style="color: var(--chalk-faint)">- Choisir le numero touche</span>
-            </h3>
+            <div class="text-center mb-3 xl:mb-4">
+              <div class="text-sm xl:text-base" style="font-family: var(--font-display); letter-spacing: 0.5px; color: var(--chalk-faint)">Choisir le numero touche</div>
+              <div class="text-3xl xl:text-4xl mt-1" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-cream)">{{ gamePlayers[setupPlayerIndex].name }}</div>
+            </div>
             <div class="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-3">
               <button
                 v-for="n in 20"
@@ -183,11 +184,11 @@
                 </div>
 
                 <!-- Flechettes restantes -->
-                <div v-if="currentPlayerIndex === index && !player.eliminated && !gameFinished" class="flex justify-center gap-2 mt-3">
+                <div v-if="currentPlayerIndex === index && !player.eliminated && !gameFinished" class="flex justify-center gap-1.5 xl:gap-2 mt-3">
                   <div
                     v-for="dart in 3"
                     :key="dart"
-                    class="w-3 h-3 rounded-full transition-all duration-300"
+                    class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full transition-all duration-300"
                     :style="{ background: dart <= player.dartsLeft ? 'var(--chalk-gold)' : 'var(--chalk-line2)' }">
                   </div>
                 </div>
@@ -198,24 +199,29 @@
           <!-- Controles de jeu -->
           <div v-if="!gameFinished" class="rounded-[14px] p-5 mt-auto"
                style="border: 2px dashed var(--chalk-line); background: rgba(241,230,203,0.03)">
-            <h3 class="text-lg xl:text-[24px] mb-1 text-center" style="font-family: var(--font-hand); font-weight: 700">
-              {{ currentPlayer?.name }}
-              <span v-if="!currentPlayer?.isKiller" style="color: var(--chalk-gold)"> - Viser le double {{ currentPlayer?.number }}</span>
-              <span v-else style="color: var(--chalk-red)"> - KILLER : eliminer les autres !</span>
-            </h3>
-            <div class="text-center mb-5">
-              <span class="text-[17px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-                {{ currentPlayer?.dartsLeft }} flechette{{ currentPlayer?.dartsLeft > 1 ? 's' : '' }} restante{{ currentPlayer?.dartsLeft > 1 ? 's' : '' }}
-              </span>
+            <div class="text-center mb-3 xl:mb-4">
+              <div class="text-sm xl:text-base" style="font-family: var(--font-display); letter-spacing: 0.5px; color: var(--chalk-faint)">
+                <span v-if="!currentPlayer?.isKiller">Viser le <span style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-gold); font-size: 2.5em; vertical-align: middle">D{{ currentPlayer?.number }}</span></span>
+                <span v-else style="color: var(--chalk-red)">KILLER : eliminer les autres !</span>
+              </div>
+              <div class="text-3xl xl:text-4xl mt-1" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-cream)">{{ currentPlayer?.name }}</div>
+              <div class="flex gap-1.5 justify-center mt-2">
+                <div v-for="dart in 3" :key="dart"
+                  class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full"
+                  :style="{ background: dart <= (currentPlayer?.dartsLeft || 0) ? 'var(--chalk-gold)' : 'var(--chalk-line2)' }">
+                </div>
+              </div>
             </div>
 
             <!-- Si pas encore killer : bouton pour devenir killer -->
-            <div v-if="!currentPlayer?.isKiller" class="flex flex-wrap gap-3 justify-center">
-              <button @click="becomeKiller" class="chalk-btn-red">
+            <div v-if="!currentPlayer?.isKiller" class="grid grid-cols-2 gap-2 xl:flex xl:flex-wrap xl:gap-3 xl:justify-center">
+              <button @click="becomeKiller" class="kl-action-btn"
+                style="color: var(--chalk-red); border-color: var(--chalk-red)">
                 Double {{ currentPlayer?.number }} touche !
               </button>
-              <button @click="missDart" class="chalk-btn-ghost">
-                Manque
+              <button @click="missDart" class="kl-action-btn"
+                style="color: var(--chalk-faint); border-color: var(--chalk-faint); border-style: dashed">
+                Manqu&eacute;
               </button>
             </div>
 
@@ -224,18 +230,20 @@
               <p class="text-center mb-4 text-[18px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
                 Quel joueur visez-vous ?
               </p>
-              <div class="flex flex-wrap gap-3 justify-center mb-4">
+              <div class="grid grid-cols-2 gap-2 mb-4 xl:flex xl:flex-wrap xl:gap-3 xl:justify-center">
                 <button
                   v-for="target in targetablePlayers"
                   :key="target.id"
                   @click="attackPlayer(target)"
-                  class="chalk-btn-red">
+                  class="kl-action-btn"
+                  style="color: var(--chalk-red); border-color: var(--chalk-red)">
                   {{ target.name }} (D{{ target.number }})
                 </button>
               </div>
               <div class="flex justify-center">
-                <button @click="missDart" class="chalk-btn-ghost">
-                  Manque
+                <button @click="missDart" class="kl-action-btn"
+                  style="color: var(--chalk-faint); border-color: var(--chalk-faint); border-style: dashed">
+                  Manqu&eacute;
                 </button>
               </div>
             </div>
@@ -354,13 +362,22 @@
 .killer-num-btn {
   font-family: var(--font-display); font-size: 22px;
   background: transparent; border: 2px dashed var(--chalk-line);
-  border-radius: 12px; padding: 10px 0; cursor: pointer;
+  border-radius: 14px; padding: 16px 0; cursor: pointer;
   color: var(--chalk-cream); transition: all 0.2s;
 }
 .killer-num-btn:not(:disabled):hover {
   border-color: var(--chalk-gold);
   background: rgba(236,198,106,0.08);
   color: var(--chalk-gold);
+}
+.kl-action-btn {
+  font-family: var(--font-display); letter-spacing: 0.5px; font-size: 22px;
+  background: transparent; border: 2px solid; border-radius: 14px;
+  padding: 16px 0; cursor: pointer; line-height: 1.1;
+  transition: all 0.2s;
+}
+.kl-action-btn:hover {
+  background: rgba(241,230,203,0.06);
 }
 @media (min-width: 1280px) {
   .kl-body { grid-template-columns: 1fr 332px; }

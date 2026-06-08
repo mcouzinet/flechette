@@ -36,11 +36,15 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3 xl:flex xl:flex-wrap xl:gap-3 xl:justify-center">
-            <button @click="addRuns(1)" class="chalk-btn-gold bb-action-btn">Simple</button>
-            <button @click="addRuns(2)" class="chalk-btn-green bb-action-btn">Double</button>
-            <button @click="addRuns(3)" class="chalk-btn-red bb-action-btn">Triple</button>
-            <button @click="addRuns(0)" class="chalk-btn-ghost bb-action-btn">Manqu&eacute;</button>
+          <div class="grid grid-cols-2 gap-2 xl:flex xl:flex-wrap xl:gap-3 xl:justify-center">
+            <button @click="addRuns(1)" class="bb-action-btn"
+              style="color: var(--chalk-green); border-color: var(--chalk-green)">Simple</button>
+            <button @click="addRuns(2)" class="bb-action-btn"
+              style="color: var(--chalk-gold); border-color: var(--chalk-gold)">Double</button>
+            <button @click="addRuns(3)" class="bb-action-btn"
+              style="color: var(--chalk-red); border-color: var(--chalk-red)">Triple</button>
+            <button @click="addRuns(0)" class="bb-action-btn"
+              style="color: var(--chalk-faint); border-color: var(--chalk-faint); border-style: dashed">Manqu&eacute;</button>
           </div>
         </div>
 
@@ -167,7 +171,15 @@
 </template>
 
 <style scoped>
-.bb-action-btn { font-size: 24px !important; padding: 12px 20px !important; }
+.bb-action-btn {
+  font-family: var(--font-display); letter-spacing: 0.5px; font-size: 22px;
+  background: transparent; border: 2px solid; border-radius: 14px;
+  padding: 16px 0; cursor: pointer; line-height: 1.1;
+  transition: all 0.2s;
+}
+.bb-action-btn:hover {
+  background: rgba(241,230,203,0.06);
+}
 @media (min-width: 1280px) {
   .bb-sidebar { border-left: 2px dashed var(--chalk-line); width: 332px; flex-shrink: 0; }
 }
