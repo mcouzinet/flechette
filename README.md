@@ -1,4 +1,4 @@
-# Flechettes
+# Stonk
 
 App de scores de flechettes entre potes. 10 jeux, Vue 3, Firebase.
 
@@ -43,5 +43,4 @@ npm install        # Installer les dependances
 npm run dev        # Serveur de developpement
 npm run build      # Build production
 npm run deploy     # Deployer sur surge.sh
-npm test           # Lancer les tests
 ```
