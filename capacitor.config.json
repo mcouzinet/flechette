@@ -1,0 +1,11 @@
+{
+  "appId": "com.mcouzinet.stonk",
+  "appName": "Stonk",
+  "webDir": "dist",
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": true,
+      "providers": ["apple.com", "google.com"]
+    }
+  }
+}

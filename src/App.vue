@@ -1,6 +1,6 @@
 <template>
   <main class="chalk-grain h-full flex flex-col overflow-y-auto xl:overflow-hidden"
-    style="font-family: var(--font-ui); color: var(--chalk-cream); background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%)">
+    style="font-family: var(--font-ui); color: var(--chalk-cream); background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right)">
 
     <!-- Cadre pointillé -->
     <div class="absolute inset-[10px] border-2 rounded-[10px] pointer-events-none opacity-50 z-0"
@@ -125,12 +125,16 @@
         <p class="text-center mb-6 text-sm" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
           Connecte-toi pour sauvegarder tes résultats. Pas obligatoire pour jouer.</p>
 
-        <div v-if="isStandalone" class="text-center mb-4 p-4 rounded-xl" style="background: rgba(236,198,106,0.08); border: 1.5px dashed var(--chalk-gold)">
-          <div class="text-base mb-2" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-gold)">Mode app</div>
-          <p class="text-sm" style="font-family: var(--font-ui); color: var(--chalk-faint)">
-            La connexion par lien ne fonctionne pas en mode app. Ouvre
-            <span style="color: var(--chalk-cream)">flechettes.surge.sh</span>
-            dans Safari, connecte-toi la-bas, puis reviens ici.</p>
+        <div v-if="isStandalone" class="space-y-3">
+          <button @click="signInApple" :disabled="authLoading"
+            class="chalk-btn w-full disabled:opacity-40" style="color: var(--chalk-cream)">&#63743; Continuer avec Apple</button>
+          <button @click="signInGoogle" :disabled="authLoading"
+            class="chalk-btn w-full disabled:opacity-40" style="color: var(--chalk-gold)">Continuer avec Google</button>
+
+          <div v-if="authMessage" :class="[
+            'text-center text-sm p-3 rounded-lg',
+            authMessage.includes('Erreur') ? 'text-[var(--chalk-red)]' : 'text-[var(--chalk-green)]'
+          ]" style="font-family: var(--font-hand); font-weight: 600">{{ authMessage }}</div>
         </div>
 
         <div v-else class="space-y-4">
@@ -171,6 +175,8 @@ import CountUp from './components/CountUp.vue';
 import Resultats from './components/Resultats.vue';
 import { auth } from './firebase.js';
 import { sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
+import { signInWithApple, signInWithGoogle, nativeSignOut } from './services/socialAuth.js';
 
 export default {
   name: "Flechette",
@@ -264,7 +270,7 @@ export default {
   mounted() {
     this.loadPlayersFromStorage();
     this.initAuth();
-    if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+    if (Capacitor.isNativePlatform() || window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
       document.documentElement.classList.add('is-standalone');
       this.isStandalone = true;
     }
@@ -318,8 +324,37 @@ export default {
       }
     },
 
+    async signInApple() {
+      this.authLoading = true;
+      this.authMessage = '';
+      try {
+        await signInWithApple();
+        this.showAuthModal = false;
+      } catch (error) {
+        console.error('Erreur connexion Apple:', error);
+        this.authMessage = 'Erreur lors de la connexion Apple.';
+      } finally {
+        this.authLoading = false;
+      }
+    },
+
+    async signInGoogle() {
+      this.authLoading = true;
+      this.authMessage = '';
+      try {
+        await signInWithGoogle();
+        this.showAuthModal = false;
+      } catch (error) {
+        console.error('Erreur connexion Google:', error);
+        this.authMessage = 'Erreur lors de la connexion Google.';
+      } finally {
+        this.authLoading = false;
+      }
+    },
+
     async logout() {
       await signOut(auth);
+      await nativeSignOut();
       this.showAuthModal = false;
     },
 
@@ -436,4 +471,7 @@ export default {
   letter-spacing: 0.3px;
   white-space: nowrap;
 }
+
+/* Hide the desktop-only fullscreen toggle in app/standalone mode (requestFullscreen is a no-op in a native WebView). */
+.is-standalone .btn-fullscreen { display: none !important; }
 </style>

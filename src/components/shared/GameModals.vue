@@ -54,6 +54,8 @@
 </template>
 
 <script>
+import { notifySuccess } from '../../services/haptics.js'
+
 export default {
   name: 'GameModals',
   props: {
@@ -65,6 +67,11 @@ export default {
     winnerName: { type: String, default: '' },
     winnerSubtitle: { type: String, default: 'a remporte la partie !' }
   },
-  emits: ['close-rules', 'close-reset', 'confirm-reset', 'close-winner', 'new-game']
+  emits: ['close-rules', 'close-reset', 'confirm-reset', 'close-winner', 'new-game'],
+  watch: {
+    showWinner(val) {
+      if (val) notifySuccess()
+    }
+  }
 }
 </script>

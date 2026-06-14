@@ -2,3 +2,9 @@ node_modules
 .env
 .DS_Store
 dist/
+
+# Sensitive — never commit
+recovery-codes.txt
+
+# Redundant root copy; the iOS build uses ios/App/App/GoogleService-Info.plist
+/GoogleService-Info.plist
