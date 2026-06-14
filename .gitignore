@@ -6,5 +6,6 @@ dist/
 # Sensitive — never commit
 recovery-codes.txt
 
-# Redundant root copy; the iOS build uses ios/App/App/GoogleService-Info.plist
+# Redundant root copies; the builds use the ones inside ios/App/App/ and android/app/
 /GoogleService-Info.plist
+/google-services.json

@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "116601649449",
+    "project_id": "flechettes-ecccb",
+    "storage_bucket": "flechettes-ecccb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:116601649449:android:acc06fc1680ecf7c685f38",
+        "android_client_info": {
+          "package_name": "com.mcouzinet.stonk"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "116601649449-35kn1sbc13jbummvfo28n97gro1k2u9c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mcouzinet.stonk",
+            "certificate_hash": "b6846be2e5fd3d7d42c3e883dac2561fe9b16c96"
+          }
+        },
+        {
+          "client_id": "116601649449-6q4lr5pop67tmkp66t6h3m2u1h9lmaiq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAksINFMtQVO9U0Kt_GT8jRvqEHNEHlF5E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "116601649449-6q4lr5pop67tmkp66t6h3m2u1h9lmaiq.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "116601649449-vjh6kkh3rje9vf1b4qrcdo12nrol6jij.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mcouzinet.stonk"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
