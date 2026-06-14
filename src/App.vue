@@ -270,10 +270,15 @@ export default {
   mounted() {
     this.loadPlayersFromStorage();
     this.initAuth();
-    if (Capacitor.isNativePlatform() || window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
-      document.documentElement.classList.add('is-standalone');
-      this.isStandalone = true;
+    const isNative = Capacitor.isNativePlatform();
+    const isPWA = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+    if (isNative || isPWA) {
+      this.isStandalone = true; // drives the in-app account UI (native sign-in)
     }
+    // PWA keeps the original fixed (no-scroll) screens; the native app must be
+    // able to scroll, so it gets its own class that does NOT force overflow:hidden.
+    if (isPWA) document.documentElement.classList.add('is-standalone');
+    if (isNative) document.documentElement.classList.add('is-native');
   },
   methods: {
     initAuth() {
@@ -473,5 +478,5 @@ export default {
 }
 
 /* Hide the desktop-only fullscreen toggle in app/standalone mode (requestFullscreen is a no-op in a native WebView). */
-.is-standalone .btn-fullscreen { display: none !important; }
+.is-standalone .btn-fullscreen, .is-native .btn-fullscreen { display: none !important; }
 </style>
