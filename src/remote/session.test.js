@@ -5,6 +5,7 @@
    transactional wrapper; this proves the semantics both clients share.) */
 import { describe, it, expect } from 'vitest'
 import { buildState } from './games/index.js'
+import { isValidDart } from './dart.js'
 
 const session = (over = {}) => ({
   gameId: 'x01',
@@ -48,5 +49,22 @@ describe('session shared-log model', () => {
 
   it('returns null for an unknown game id', () => {
     expect(buildState(session({ gameId: 'nope' }))).toBeNull()
+  })
+})
+
+describe('dart validation (trust boundary)', () => {
+  it('accepts valid darts and a miss', () => {
+    expect(isValidDart({ n: 20, mult: 3 })).toBe(true)
+    expect(isValidDart({ n: 25, mult: 2 })).toBe(true) // double bull
+    expect(isValidDart({ miss: true })).toBe(true)
+  })
+  it('rejects malformed or hostile darts', () => {
+    expect(isValidDart({ n: 999, mult: 99 })).toBe(false)
+    expect(isValidDart({ n: 25, mult: 3 })).toBe(false) // triple bull not allowed
+    expect(isValidDart({ n: 0, mult: 1 })).toBe(false)
+    expect(isValidDart({ n: 21, mult: 1 })).toBe(false)
+    expect(isValidDart(null)).toBe(false)
+    expect(isValidDart(5)).toBe(false)
+    expect(isValidDart({})).toBe(false)
   })
 })

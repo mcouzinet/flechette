@@ -17,11 +17,12 @@ import {
   doc, getDoc, setDoc, updateDoc, onSnapshot, runTransaction, serverTimestamp, deleteField,
 } from 'firebase/firestore'
 import { getGame, buildState } from './games/index.js'
+import { isValidDart } from './dart.js'
 
 const COL = 'sessions'
 // unambiguous alphabet (no O/0/I/1)
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-const CODE_LEN = 5
+export const CODE_LEN = 6 // 31^6 ≈ 887M codes — blind enumeration is impractical
 
 export function generateCode() {
   let code = ''
@@ -92,6 +93,7 @@ export function subscribe(code, cb, onError) {
 
 /** Append a dart throw (transactional, concurrency-safe). dart = {n,mult} | {miss:true} */
 export async function throwDart(code, dart) {
+  if (!isValidDart(dart)) throw new Error('Tir invalide')
   const uid = await ensureAuth()
   const ref = doc(db, COL, normalizeCode(code))
   await runTransaction(db, async (tx) => {

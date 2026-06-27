@@ -47,11 +47,11 @@
     <!-- JOIN -->
     <div v-else class="lb-pane">
       <div class="lb-label">Code de la partie</div>
-      <input v-model="code" placeholder="ABCDE" maxlength="5"
+      <input v-model="code" :placeholder="placeholder" :maxlength="codeLen"
         class="lb-code" @input="code = code.toUpperCase()" />
       <div class="lb-label">Ton nom</div>
       <input v-model="joinName" placeholder="ton nom" class="lb-pinput lb-joinname" />
-      <button class="lb-go" :disabled="busy || code.length < 4" @click="join">
+      <button class="lb-go" :disabled="busy || code.trim().length !== codeLen" @click="join">
         {{ busy ? 'Connexion…' : 'Rejoindre' }}
       </button>
     </div>
@@ -62,7 +62,7 @@
 
 <script>
 import { GAME_LIST } from './games/index.js'
-import { createSession, joinSession } from './session.js'
+import { createSession, joinSession, CODE_LEN } from './session.js'
 
 export default {
   name: 'RemoteLobby',
@@ -78,6 +78,7 @@ export default {
       config: { start: 301 },
       players: prefill,
       code: '',
+      codeLen: CODE_LEN,
       joinName: prefill[0]?.name || 'Invité',
       error: '',
       busy: false,
@@ -87,7 +88,11 @@ export default {
     canCreate() {
       return this.players.filter((p) => p.name.trim()).length >= 2
     },
+    placeholder() {
+      return 'ABCDEFGH'.slice(0, this.codeLen)
+    },
   },
+
   methods: {
     async create() {
       this.error = ''

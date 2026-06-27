@@ -12,6 +12,7 @@
       </div>
     </header>
 
+    <div v-if="toast" class="rg-toast">{{ toast }}</div>
     <div v-if="error" class="rg-msg">{{ error }}</div>
     <div v-else-if="!state" class="rg-msg">Connexion à la partie…</div>
 
@@ -56,7 +57,7 @@
 
       <div class="rg-actions">
         <button class="rg-ghost" @click="undo" :disabled="busy">↶ Annuler</button>
-        <button class="rg-ghost" @click="reset" :disabled="busy">Réinitialiser</button>
+        <button class="rg-ghost" @click="reset" :disabled="busy">{{ confirmingReset ? 'Confirmer ?' : 'Réinitialiser' }}</button>
       </div>
 
       <!-- winner overlay -->
@@ -90,7 +91,7 @@ export default {
   props: { code: { type: String, required: true } },
   emits: ['home'],
   data() {
-    return { session: null, error: '', busy: false, connected: false, unsub: null, wasFinished: false }
+    return { session: null, error: '', busy: false, connected: false, unsub: null, toast: '', confirmingReset: false }
   },
   computed: {
     game() {
@@ -129,9 +130,10 @@ export default {
     },
   },
   watch: {
-    'state.finished'(now) {
-      if (now && !this.wasFinished) notifySuccess()
-      this.wasFinished = now
+    // Fire only on a genuine in-session win (false -> true), never on a cold
+    // join to an already-finished game (no transition = no haptic).
+    'state.finished'(now, was) {
+      if (now && was === false) notifySuccess()
     },
   },
   mounted() {
@@ -157,6 +159,11 @@ export default {
     leaveSession(this.code)
   },
   methods: {
+    flash(msg) {
+      this.toast = msg
+      clearTimeout(this._toastT)
+      this._toastT = setTimeout(() => { this.toast = '' }, 2200)
+    },
     async onThrow(dart) {
       if (this.busy) return
       this.busy = true
@@ -164,17 +171,26 @@ export default {
         await throwDart(this.code, dart)
       } catch (e) {
         console.error(e)
+        this.flash('Tir non enregistré, réessaie.')
       } finally {
         this.busy = false
       }
     },
     async undo() {
       this.busy = true
-      try { await undoLast(this.code) } catch (e) { console.error(e) } finally { this.busy = false }
+      try { await undoLast(this.code) } catch (e) { console.error(e); this.flash("Échec de l'annulation.") } finally { this.busy = false }
     },
     async reset() {
+      // two-tap confirm — wiping the shared log affects every player
+      if (!this.confirmingReset) {
+        this.confirmingReset = true
+        clearTimeout(this._resetT)
+        this._resetT = setTimeout(() => { this.confirmingReset = false }, 3000)
+        return
+      }
+      this.confirmingReset = false
       this.busy = true
-      try { await resetGame(this.code) } catch (e) { console.error(e) } finally { this.busy = false }
+      try { await resetGame(this.code) } catch (e) { console.error(e); this.flash('Échec de la réinitialisation.') } finally { this.busy = false }
     },
     quit() {
       this.$emit('home')
@@ -186,7 +202,7 @@ export default {
       const text = `Rejoins ma partie de fléchettes Stonk avec le code ${this.code}`
       try {
         if (navigator.share) await navigator.share({ title: 'Stonk', text })
-        else if (navigator.clipboard) await navigator.clipboard.writeText(this.code)
+        else if (navigator.clipboard) { await navigator.clipboard.writeText(this.code); this.flash('Code copié') }
       } catch (_) { /* ignore */ }
     },
   },
@@ -253,6 +269,11 @@ export default {
 .rg-win-title { font-family: var(--font-display); font-size: 34px; color: var(--chalk-gold); margin: 8px 0; }
 .rg-win-name { font-family: var(--font-hand); font-weight: 700; font-size: 26px; margin-bottom: 18px; }
 .rg-win-actions { display: flex; gap: 10px; justify-content: center; }
+.rg-toast {
+  position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.82); color: var(--chalk-cream); padding: 9px 18px; border-radius: 12px;
+  font-family: var(--font-hand); font-weight: 600; font-size: 17px; z-index: 60; white-space: nowrap;
+}
 .rg-green {
   border: 2px solid var(--chalk-green); border-radius: 14px; padding: 8px 22px; background: transparent;
   color: var(--chalk-green); font-family: var(--font-hand); font-weight: 600; font-size: 22px; cursor: pointer;
