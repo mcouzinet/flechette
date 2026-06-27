@@ -31,17 +31,18 @@
 
       <div class="lb-label">Les joueurs</div>
       <div class="lb-players">
-        <div v-for="(p, i) in players" :key="i" class="lb-prow">
+        <div v-for="(p, i) in roster" :key="i" class="lb-prow">
           <span class="lb-pnum">{{ i + 1 }}.</span>
           <input v-model="p.name" :placeholder="`joueur ${i + 1}`" class="lb-pinput" />
-          <button v-if="players.length > 2" class="lb-px" @click="players.splice(i, 1)">×</button>
+          <button v-if="roster.length > 2" class="lb-px" @click="roster.splice(i, 1)">×</button>
         </div>
-        <button v-if="players.length < 6" class="lb-add" @click="players.push({ name: '' })">+ ajouter</button>
+        <button v-if="roster.length < 6" class="lb-add" @click="roster.push({ name: '' })">+ ajouter</button>
       </div>
 
       <button class="lb-go" :disabled="busy || !canCreate" @click="create">
         {{ busy ? 'Création…' : 'Créer la partie' }}
       </button>
+      <p v-if="!canCreate" class="lb-hint">Donne un nom à au moins 2 joueurs.</p>
     </div>
 
     <!-- JOIN -->
@@ -69,14 +70,17 @@ export default {
   props: { players: { type: Array, default: () => [] } },
   emits: ['start', 'home'],
   data() {
+    // The `players` PROP (home roster) is the SOURCE; the editable list lives
+    // under a different name (`roster`) to avoid a prop/data name clash — in
+    // Vue 3 the prop wins that clash and silently breaks local editing.
     const prefill = (this.players || []).filter((p) => p.name).map((p) => ({ name: p.name }))
-    while (prefill.length < 2) prefill.push({ name: '' })
+    while (prefill.length < 2) prefill.push({ name: `Joueur ${prefill.length + 1}` })
     return {
       tab: 'create',
       games: GAME_LIST,
       gameId: 'x01',
       config: { start: 301 },
-      players: prefill,
+      roster: prefill,
       code: '',
       codeLen: CODE_LEN,
       joinName: prefill[0]?.name || 'Invité',
@@ -86,7 +90,7 @@ export default {
   },
   computed: {
     canCreate() {
-      return this.players.filter((p) => p.name.trim()).length >= 2
+      return this.roster.filter((p) => p.name.trim()).length >= 2
     },
     placeholder() {
       return 'ABCDEFGH'.slice(0, this.codeLen)
@@ -96,7 +100,7 @@ export default {
   methods: {
     async create() {
       this.error = ''
-      const named = this.players.filter((p) => p.name.trim()).map((p, i) => ({ id: `p${i}`, name: p.name.trim() }))
+      const named = this.roster.filter((p) => p.name.trim()).map((p, i) => ({ id: `p${i}`, name: p.name.trim() }))
       if (named.length < 2) {
         this.error = 'Il faut au moins 2 joueurs.'
         return
@@ -187,4 +191,5 @@ export default {
 }
 .lb-go:disabled { opacity: 0.4; }
 .lb-error { text-align: center; font-family: var(--font-hand); font-size: 18px; color: var(--chalk-red); }
+.lb-hint { text-align: center; font-family: var(--font-hand); font-size: 16px; color: var(--chalk-faint2); margin: -4px 0 0; }
 </style>
