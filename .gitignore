@@ -3,6 +3,13 @@ node_modules
 .DS_Store
 dist/
 
+# Firebase emulator artifacts
+*-debug.log
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.firebase/
+
 # Sensitive — never commit
 recovery-codes.txt
 

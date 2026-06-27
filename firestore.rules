@@ -32,6 +32,7 @@ service cloud.firestore {
                     && request.resource.data.gameId    == resource.data.gameId
                     && request.resource.data.code      == resource.data.code
                     && request.resource.data.players   == resource.data.players
+                    && request.resource.data.config    == resource.data.config
                     && request.resource.data.createdAt == resource.data.createdAt
                     && request.resource.data.actions.size() <= 2000;
 
