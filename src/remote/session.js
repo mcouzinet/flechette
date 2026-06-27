@@ -91,15 +91,18 @@ export function subscribe(code, cb, onError) {
   )
 }
 
-/** Append a dart throw (transactional, concurrency-safe). dart = {n,mult} | {miss:true} */
+/** Append a dart throw (transactional, concurrency-safe). The dart shape is
+ *  game-specific; each game module validates it (fallback to isValidDart). */
 export async function throwDart(code, dart) {
-  if (!isValidDart(dart)) throw new Error('Tir invalide')
   const uid = await ensureAuth()
   const ref = doc(db, COL, normalizeCode(code))
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref)
     if (!snap.exists()) throw new Error('Session introuvable')
     const data = snap.data()
+    const game = getGame(data.gameId)
+    const valid = game && (game.validate ? game.validate(dart) : isValidDart(dart))
+    if (!valid) throw new Error('Tir invalide')
     const state = buildState(data)
     if (state && state.finished) return // ignore throws after the game ends
     const action = { type: 'THROW', dart, by: uid, at: Date.now() }

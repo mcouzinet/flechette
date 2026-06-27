@@ -1,12 +1,22 @@
 /* Registry of remote-capable games. Each module exports the same shape
-   (meta, createInitialState, reducer, selectors). x01 and cricket are added
-   here once their modules exist. */
-import countup from './countup.js'
+   (meta, createInitialState, reducer, selectors, validate). */
 import x01 from './x01.js'
 import cricket from './cricket.js'
+import countup from './countup.js'
+import shanghai from './shanghai.js'
+import horloge from './horloge.js'
+import baseball from './baseball.js'
+import bobs27 from './bobs27.js'
+import halveit from './halveit.js'
+import morpion from './morpion.js'
+import killer from './killer.js'
 
-export const GAMES = { countup, x01, cricket }
-export const GAME_LIST = [x01, cricket, countup]
+export const GAMES = { x01, cricket, countup, shanghai, horloge, baseball, bobs27, halveit, morpion, killer }
+
+// Games offered in the remote lobby — only those with a finished board.
+// Expand as each board lands.
+export const PLAYABLE = ['x01']
+export const GAME_LIST = PLAYABLE.map((id) => GAMES[id])
 
 export function getGame(id) {
   return GAMES[id] || null

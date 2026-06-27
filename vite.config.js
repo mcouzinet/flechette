@@ -12,5 +12,9 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
-  }
+  },
+  test: {
+    // the emulator integration test only runs under `firebase emulators:exec`
+    exclude: ['**/node_modules/**', '**/dist/**', '**/emulator-test/**', '**/*.emulator.test.*'],
+  },
 })
