@@ -36,6 +36,15 @@
 <script>
 import RemoteGameShell from './RemoteGameShell.vue'
 import X01Board from './boards/X01Board.vue'
+import CountUpBoard from './boards/CountUpBoard.vue'
+import ShanghaiBoard from './boards/ShanghaiBoard.vue'
+import CricketBoard from './boards/CricketBoard.vue'
+import HorlogeBoard from './boards/HorlogeBoard.vue'
+import BaseballBoard from './boards/BaseballBoard.vue'
+import Bobs27Board from './boards/Bobs27Board.vue'
+import HalveItBoard from './boards/HalveItBoard.vue'
+import MorpionBoard from './boards/MorpionBoard.vue'
+import KillerBoard from './boards/KillerBoard.vue'
 import { getGame, buildState } from './games/index.js'
 import { subscribe, throwDart, undoLast, resetGame, leaveSession } from './session.js'
 import { notifySuccess } from '../services/haptics.js'
@@ -44,6 +53,15 @@ import { notifySuccess } from '../services/haptics.js'
 // listed render a placeholder until their board lands.
 const BOARDS = {
   x01: X01Board,
+  countup: CountUpBoard,
+  shanghai: ShanghaiBoard,
+  cricket: CricketBoard,
+  horloge: HorlogeBoard,
+  baseball: BaseballBoard,
+  bobs27: Bobs27Board,
+  halveit: HalveItBoard,
+  morpion: MorpionBoard,
+  killer: KillerBoard,
 }
 
 function describeDart(dart) {
@@ -64,7 +82,7 @@ function describeDart(dart) {
 
 export default {
   name: 'RemoteGame',
-  components: { RemoteGameShell, X01Board },
+  components: { RemoteGameShell },
   props: { code: { type: String, required: true } },
   emits: ['home'],
   data() {

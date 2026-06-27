@@ -15,7 +15,7 @@ export const GAMES = { x01, cricket, countup, shanghai, horloge, baseball, bobs2
 
 // Games offered in the remote lobby — only those with a finished board.
 // Expand as each board lands.
-export const PLAYABLE = ['x01']
+export const PLAYABLE = ['x01', 'cricket', 'countup', 'shanghai', 'horloge', 'baseball', 'bobs27', 'halveit', 'morpion', 'killer']
 export const GAME_LIST = PLAYABLE.map((id) => GAMES[id])
 
 export function getGame(id) {
