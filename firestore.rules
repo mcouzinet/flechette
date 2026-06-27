@@ -1,12 +1,26 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Per-user saved game results (unchanged)
     match /game_results/{resultId} {
       allow create: if request.auth != null
                     && request.resource.data.userId == request.auth.uid;
       allow read: if request.auth != null
                   && resource.data.userId == request.auth.uid;
       allow update, delete: if false;
+    }
+
+    // Remote play sessions — trust-based shared board.
+    // Any authenticated user (incl. anonymous) who knows the random code may
+    // read and update the session; the unguessable code is the access secret.
+    // Only the host may create the doc, under their own uid.
+    match /sessions/{code} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.hostUid == request.auth.uid;
+      allow update: if request.auth != null;
+      allow delete: if false;
     }
   }
 }

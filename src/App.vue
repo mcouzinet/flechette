@@ -29,6 +29,15 @@
         </div>
       </header>
 
+      <!-- Jouer à distance -->
+      <button @click="currentComponent = 'RemoteMode'" class="remote-cta">
+        <span>
+          <span class="remote-cta-title">🎯 Jouer à distance</span>
+          <span class="remote-cta-sub">une partie, deux téléphones — chacun note</span>
+        </span>
+        <span class="remote-cta-arrow">→</span>
+      </button>
+
       <!-- Corps : joueurs + jeux -->
       <div class="flex-1 flex flex-col xl:grid xl:gap-9 xl:overflow-hidden px-5 xl:px-9 pb-5 home-body">
 
@@ -173,6 +182,7 @@ import Bobs27 from './components/Bobs27.vue';
 import Baseball from './components/Baseball.vue';
 import CountUp from './components/CountUp.vue';
 import Resultats from './components/Resultats.vue';
+import RemoteMode from './remote/RemoteMode.vue';
 import { auth } from './firebase.js';
 import { sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from 'firebase/auth';
 import { Capacitor } from '@capacitor/core';
@@ -191,7 +201,8 @@ export default {
     Bobs27,
     Baseball,
     CountUp,
-    Resultats
+    Resultats,
+    RemoteMode
   },
   data() {
     return {
@@ -479,4 +490,15 @@ export default {
 
 /* Hide the desktop-only fullscreen toggle in app/standalone mode (requestFullscreen is a no-op in a native WebView). */
 .is-standalone .btn-fullscreen, .is-native .btn-fullscreen { display: none !important; }
+
+/* "Play remotely" call-to-action on the home screen */
+.remote-cta {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; text-align: left; margin: 4px 0 22px;
+  border: 2px solid var(--chalk-gold); border-radius: 16px; padding: 14px 18px;
+  background: rgba(236, 198, 106, 0.08); cursor: pointer;
+}
+.remote-cta-title { display: block; font-family: var(--font-display); font-size: 21px; color: var(--chalk-cream); letter-spacing: 0.5px; }
+.remote-cta-sub { display: block; font-family: var(--font-hand); font-size: 18px; color: var(--chalk-gold); margin-top: 2px; }
+.remote-cta-arrow { font-family: var(--font-display); font-size: 26px; color: var(--chalk-gold); flex: none; }
 </style>
