@@ -21,7 +21,8 @@
    among friends. If integrity ever matters, move appends to a server-side
    validated endpoint (Cloud Function) and reject raw client writes.
    ============================================================ */
-import { db, auth } from '../firebase.js'
+import { auth } from '../firebase.js'
+import { db } from '../firestore.js'
 import { signInAnonymously } from 'firebase/auth'
 import {
   doc, getDoc, setDoc, updateDoc, onSnapshot, runTransaction, serverTimestamp, deleteField,
