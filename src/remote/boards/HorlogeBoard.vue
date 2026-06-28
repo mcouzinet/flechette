@@ -51,7 +51,7 @@
       </div>
 
       <!-- Grille des numéros -->
-      <div class="grid grid-cols-3 lg:grid-cols-7 gap-1.5 mb-3 xl:gap-3 xl:mb-5">
+      <div class="grid grid-cols-4 lg:grid-cols-7 gap-1.5 mb-3 xl:gap-3 xl:mb-5">
         <button v-for="n in targetNumbers" :key="n" @click="hit(n)" :disabled="state.finished"
           class="horloge-num"
           :style="numStyle(n)">

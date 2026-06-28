@@ -110,7 +110,9 @@ export function reducer(state, action) {
 
   const zi = zoneIndex(action.dart)
   if (zi >= 0) {
-    const mult = action.dart.mult || 1
+    // clamp to 1..3 marks — the reducer is the last line of defence against a
+    // malformed action (the shared code is a trust token, not a hard boundary).
+    const mult = Math.min(3, Math.max(1, Math.floor(action.dart.mult) || 1))
     const pts = s.zones[zi].pts
     // Apply marks one at a time — order matters when a multi crosses the
     // close threshold (the marks that close the zone score nothing; only

@@ -47,7 +47,7 @@
 
     <!-- Tableau des rounds (cibles imposées x joueurs) -->
     <div class="overflow-x-auto chalk-scroll">
-      <table class="w-full" style="border-collapse: separate; border-spacing: 0">
+      <table class="w-full min-w-[400px]" style="border-collapse: separate; border-spacing: 0">
         <thead>
           <tr>
             <th class="text-left px-2 py-1.5 xl:p-2 text-[13px] xl:text-sm whitespace-nowrap"

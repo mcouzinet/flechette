@@ -23,10 +23,13 @@ service cloud.firestore {
                     && request.resource.data.code == code
                     && request.resource.data.actions.size() == 0;
 
-      // Trust-based but locked down: writers may move only the gameplay fields.
-      // Identity/meta fields are frozen and the action log is capped, so a
-      // participant can't hijack the host, swap the game, or bloat the doc
-      // (which every client replays through the reducer).
+      // TRUST MODEL: the random code is a shared *edit token*, not an integrity
+      // boundary. Identity/meta (host/game/code/players/config/createdAt) are
+      // frozen and the action log is capped, but action *contents* are NOT
+      // validated here — a participant could append arbitrary actions out of
+      // band (every client replays them through the reducer, which stays robust
+      // to garbage). Acceptable for casual play among people who share the code;
+      // move appends server-side if integrity ever matters.
       allow update: if request.auth != null
                     && request.resource.data.hostUid   == resource.data.hostUid
                     && request.resource.data.gameId    == resource.data.gameId

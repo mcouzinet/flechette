@@ -10,6 +10,16 @@
      a transaction (read-modify-write), so concurrent scores stay consistent.
    - "Undo" = drop the last action. "Reset" = clear the log.
    - Identity is anonymous Firebase auth (ensureAuth) — no login needed to play.
+
+   TRUST MODEL (important): the 6-char code is a shared *edit token* among the
+   people who have it, NOT an integrity boundary. The security rules freeze the
+   meta (host/game/players/config/createdAt) and cap the log length, but they
+   do NOT validate action *contents* — a participant could append arbitrary
+   actions out of band. The per-game validate()/isValidDart() check below is
+   UX-level input guarding for our own client; the real safety net is that the
+   reducers stay robust to garbage input. This is intentional for casual play
+   among friends. If integrity ever matters, move appends to a server-side
+   validated endpoint (Cloud Function) and reject raw client writes.
    ============================================================ */
 import { db, auth } from '../firebase.js'
 import { signInAnonymously } from 'firebase/auth'
