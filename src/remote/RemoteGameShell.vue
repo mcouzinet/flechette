@@ -28,6 +28,8 @@
       </section>
 
       <aside class="flex flex-col gap-2 xl:gap-3 min-h-0 xl:pl-5 pt-3 xl:pt-0 rgs-sidebar">
+        <!-- game-specific sidebar content (e.g. Cricket standings) above the log -->
+        <slot name="sidebar-top"></slot>
         <HistoryPanel :history="history" @undo="$emit('undo')">
           <template #entry="slotProps">
             <slot name="history-entry" v-bind="slotProps">

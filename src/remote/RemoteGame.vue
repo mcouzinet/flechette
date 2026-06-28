@@ -23,6 +23,10 @@
       <p style="font-family: var(--font-hand); font-size: 19px; color: var(--chalk-gold)">Ce jeu arrive bientôt en mode à distance.</p>
     </div>
 
+    <template v-if="standings" #sidebar-top>
+      <component :is="standings" :state="state" :game="game" />
+    </template>
+
     <template #history-entry="{ entry, index, total }">
       <div class="flex justify-between items-baseline">
         <span class="text-[20px]" style="font-family: var(--font-hand); font-weight: 700">{{ entry.player }}</span>
@@ -49,6 +53,7 @@ import Bobs27Board from './boards/Bobs27Board.vue'
 import HalveItBoard from './boards/HalveItBoard.vue'
 import MorpionBoard from './boards/MorpionBoard.vue'
 import KillerBoard from './boards/KillerBoard.vue'
+import CricketStandings from './boards/CricketStandings.vue'
 import { getGame, buildState } from './games/index.js'
 import { subscribe, throwDart, undoLast, resetGame, leaveSession } from './session.js'
 import { notifySuccess } from '../services/haptics.js'
@@ -66,6 +71,12 @@ const BOARDS = {
   halveit: HalveItBoard,
   morpion: MorpionBoard,
   killer: KillerBoard,
+}
+
+// Game-specific sidebar panels (rendered above the history) — mirrors the
+// classic games that put a standings/ranking aside next to the board.
+const STANDINGS = {
+  cricket: CricketStandings,
 }
 
 function describeDart(dart) {
@@ -96,6 +107,7 @@ export default {
     game() { return this.session ? getGame(this.session.gameId) : null },
     state() { return this.session && this.game ? buildState(this.session) : null },
     board() { return this.session ? BOARDS[this.session.gameId] || null : null },
+    standings() { return this.session ? STANDINGS[this.session.gameId] || null : null },
     winnerName() {
       const w = this.state && this.game.selectors.winner(this.state)
       return w ? w.name : ''
