@@ -184,7 +184,9 @@ export default {
       if (this.state.finished) return
       // Bull's dart number is 25; other zones use their label number (= pts).
       const n = zone.label === 'Bull' ? 25 : zone.pts
-      this.$emit('throw', { n, mult: this.mult })
+      // there is no triple bull — the bull tops out at double (2 marks).
+      const mult = n === 25 ? Math.min(this.mult, 2) : this.mult
+      this.$emit('throw', { n, mult })
     },
     emitMiss() {
       if (this.state.finished) return
