@@ -28,17 +28,24 @@
     </template>
 
     <template #history-entry="{ entry, index, total }">
-      <div class="flex justify-between items-baseline">
-        <span class="text-[20px]" style="font-family: var(--font-hand); font-weight: 700">{{ entry.player }}</span>
-        <span class="text-[13px]" style="color: var(--chalk-faint2)">#{{ total - index }}</span>
-      </div>
-      <div class="flex justify-between items-baseline gap-2">
-        <span class="text-[15px]" style="color: var(--chalk-faint)">{{ entry.text }}</span>
-        <span v-if="entry.result !== '' && entry.result != null" class="text-[16px] shrink-0"
-          style="font-family: var(--font-display); color: var(--chalk-cream)">{{ entry.result }}</span>
+      <div :style="{ opacity: entry.pending ? 0.5 : 1 }">
+        <div class="flex justify-between items-baseline">
+          <span class="text-[20px]" style="font-family: var(--font-hand); font-weight: 700">{{ entry.player }}</span>
+          <span v-if="entry.pending" class="text-[12px]" style="color: var(--chalk-gold)">envoi…</span>
+          <span v-else class="text-[13px]" style="color: var(--chalk-faint2)">#{{ total - index }}</span>
+        </div>
+        <div class="flex justify-between items-baseline gap-2">
+          <span class="text-[15px]" style="color: var(--chalk-faint)">{{ entry.text }}</span>
+          <span v-if="entry.result !== '' && entry.result != null" class="text-[16px] shrink-0"
+            style="font-family: var(--font-display); color: var(--chalk-cream)">{{ entry.result }}</span>
+        </div>
       </div>
     </template>
   </RemoteGameShell>
+
+  <transition name="rg-toast">
+    <div v-if="toast" class="rg-toast">{{ toast }}</div>
+  </transition>
 </template>
 
 <script>
@@ -60,7 +67,7 @@ import BaseballStandings from './boards/BaseballStandings.vue'
 import Bobs27Standings from './boards/Bobs27Standings.vue'
 import HalveItStandings from './boards/HalveItStandings.vue'
 import KillerStandings from './boards/KillerStandings.vue'
-import { getGame, buildState } from './games/index.js'
+import { getGame } from './games/index.js'
 import { subscribe, throwDart, undoLast, resetGame, leaveSession } from './session.js'
 import { notifySuccess } from '../services/haptics.js'
 
@@ -113,11 +120,39 @@ export default {
   props: { code: { type: String, required: true } },
   emits: ['home'],
   data() {
-    return { session: null, error: '', busy: false, connected: false, unsub: null }
+    return { session: null, error: '', busy: false, connected: false, unsub: null, pendingDart: null, pendingFromCount: -1, toast: '', toastTimer: null }
   },
   computed: {
     game() { return this.session ? getGame(this.session.gameId) : null },
-    state() { return this.session && this.game ? buildState(this.session) : null },
+    // Single replay of the action log yields BOTH the authoritative state and the
+    // history (was two separate O(n) replays per snapshot). It also overlays the
+    // OPTIMISTIC dart we just threw, until the snapshot confirms it — so remote
+    // play feels instant despite the Firestore transaction round-trip.
+    derived() {
+      if (!this.session || !this.game) return { state: null, history: [] }
+      const g = this.game
+      const sel = g.selectors
+      let s = g.createInitialState(this.session.players, this.session.config || {})
+      const history = []
+      const record = (action, dart, pending) => {
+        const activeId = sel.activePlayerId(s)
+        const player = (s.players.find((p) => p.id === activeId) || {}).name || ''
+        s = g.reducer(s, action)
+        let result = ''
+        try {
+          const row = (sel.scoreboard(s) || []).find((r) => r.id === activeId)
+          if (row && row.value != null) result = row.value
+        } catch (_) { /* ignore */ }
+        history.push({ player, text: describeDart(dart), result, pending })
+      }
+      for (const a of this.session.actions || []) record(a, a.dart, false)
+      if (this.pendingDart && (this.session.actions || []).length <= this.pendingFromCount && !s.finished) {
+        record({ type: 'THROW', dart: this.pendingDart }, this.pendingDart, true)
+      }
+      return { state: s, history }
+    },
+    state() { return this.derived.state },
+    historyEntries() { return this.derived.history },
     board() { return this.session ? BOARDS[this.session.gameId] || null : null },
     standings() { return this.session ? STANDINGS[this.session.gameId] || null : null },
     winnerName() {
@@ -131,30 +166,16 @@ export default {
       if (!this.session || !this.session.participants) return ''
       return Object.values(this.session.participants).map((p) => p.name).join(', ')
     },
-    historyEntries() {
-      if (!this.session || !this.game) return []
-      const sel = this.game.selectors
-      let s = this.game.createInitialState(this.session.players, this.session.config || {})
-      const out = []
-      for (const a of this.session.actions || []) {
-        const activeId = sel.activePlayerId(s)
-        const player = (s.players.find((p) => p.id === activeId) || {}).name || ''
-        s = this.game.reducer(s, a)
-        // resulting value for the player who just threw (from the scoreboard
-        // selector) — gives the history the same "→ result" context as local
-        let result = ''
-        try {
-          const row = (sel.scoreboard(s) || []).find((r) => r.id === activeId)
-          if (row && row.value != null) result = row.value
-        } catch (_) { /* ignore */ }
-        out.push({ player, text: describeDart(a.dart), result })
-      }
-      return out
-    },
   },
   watch: {
     'state.finished'(now, was) {
       if (now && was === false) notifySuccess()
+    },
+    // drop the optimistic overlay once the live snapshot includes our throw
+    session(now) {
+      if (this.pendingDart && now && (now.actions || []).length > this.pendingFromCount) {
+        this.pendingDart = null
+      }
     },
   },
   mounted() {
@@ -170,13 +191,33 @@ export default {
   },
   beforeUnmount() {
     if (this.unsub) this.unsub()
+    if (this.toastTimer) clearTimeout(this.toastTimer)
     leaveSession(this.code)
   },
   methods: {
     async onThrow(dart) {
-      if (this.busy) return
+      // block re-entry until the previous throw's snapshot has reconciled, so a
+      // rapid second tap can't overlay onto a stale (pre-commit) state
+      if (this.busy || this.pendingDart || (this.state && this.state.finished)) return
       this.busy = true
-      try { await throwDart(this.code, dart) } catch (e) { console.error(e) } finally { this.busy = false }
+      // optimistic: render the dart immediately; the snapshot watcher clears it
+      this.pendingDart = dart
+      this.pendingFromCount = this.session && this.session.actions ? this.session.actions.length : 0
+      try {
+        const applied = await throwDart(this.code, dart)
+        if (applied === false) this.pendingDart = null // finished elsewhere; nothing to reconcile
+      } catch (e) {
+        this.pendingDart = null // revert the optimistic dart
+        this.showToast('Tir refusé, réessaie')
+        console.error(e)
+      } finally {
+        this.busy = false
+      }
+    },
+    showToast(msg) {
+      this.toast = msg
+      if (this.toastTimer) clearTimeout(this.toastTimer)
+      this.toastTimer = setTimeout(() => { this.toast = '' }, 2600)
     },
     async undo() {
       this.busy = true
@@ -203,4 +244,12 @@ export default {
   font-family: var(--font-hand); font-size: 22px; color: var(--chalk-faint);
   background: radial-gradient(130% 90% at 50% -10%, #20322b, var(--chalk-bg) 72%); }
 .rg-soon { display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center; text-align: center; padding: 60px 20px; }
+.rg-toast {
+  position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+  background: var(--chalk-red); color: var(--chalk-bg); z-index: 60;
+  font-family: var(--font-hand); font-weight: 700; font-size: 17px;
+  padding: 9px 20px; border-radius: 12px; box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45); white-space: nowrap;
+}
+.rg-toast-enter-active, .rg-toast-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; }
+.rg-toast-enter-from, .rg-toast-leave-to { opacity: 0; transform: translate(-50%, 12px); }
 </style>

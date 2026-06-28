@@ -106,18 +106,22 @@ export function subscribe(code, cb, onError) {
 export async function throwDart(code, dart) {
   const uid = await ensureAuth()
   const ref = doc(db, COL, normalizeCode(code))
-  await runTransaction(db, async (tx) => {
+  // Resolves to true if the throw was appended, false if it was ignored
+  // (game already finished elsewhere) — lets the caller clear its optimistic UI.
+  return runTransaction(db, async (tx) => {
     const snap = await tx.get(ref)
     if (!snap.exists()) throw new Error('Session introuvable')
     const data = snap.data()
     const game = getGame(data.gameId)
     const valid = game && (game.validate ? game.validate(dart) : isValidDart(dart))
     if (!valid) throw new Error('Tir invalide')
-    const state = buildState(data)
-    if (state && state.finished) return // ignore throws after the game ends
+    const state = buildState(data) // single replay of the log
+    if (state && state.finished) return false // ignore throws after the game ends
     const action = { type: 'THROW', dart, by: uid, at: Date.now() }
+    const next = game.reducer(state, action) // incremental — avoids a 2nd full replay
     const actions = [...(data.actions || []), action]
-    tx.update(ref, { actions, status: nextStatus(data, actions), updatedAt: serverTimestamp() })
+    tx.update(ref, { actions, status: next && next.finished ? 'finished' : 'playing', updatedAt: serverTimestamp() })
+    return true
   })
 }
 
