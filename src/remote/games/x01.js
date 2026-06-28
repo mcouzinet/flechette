@@ -29,7 +29,7 @@ export const meta = {
   minPlayers: 2,
   dartsPerTurn: DARTS_PER_TURN,
   options: [
-    { key: 'start', label: 'Score de départ', values: [301, 501], default: DEFAULT_START },
+    { key: 'start', label: 'Score de départ', values: [101, 301, 401, 501, 701, 1001], default: DEFAULT_START },
   ],
 }
 

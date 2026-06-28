@@ -25,7 +25,7 @@
       </div>
 
       <div v-if="gameId === 'x01'" class="lb-opt">
-        <button v-for="s in [301, 501]" :key="s"
+        <button v-for="s in [101, 301, 401, 501, 701, 1001]" :key="s"
           :class="['lb-pill', config.start === s && 'on']" @click="config.start = s">{{ s }}</button>
       </div>
 
@@ -34,15 +34,15 @@
         <div v-for="(p, i) in roster" :key="i" class="lb-prow">
           <span class="lb-pnum">{{ i + 1 }}.</span>
           <input v-model="p.name" :placeholder="`joueur ${i + 1}`" class="lb-pinput" />
-          <button v-if="roster.length > 2" class="lb-px" @click="roster.splice(i, 1)">×</button>
+          <button v-if="roster.length > minP" class="lb-px" @click="roster.splice(i, 1)">×</button>
         </div>
-        <button v-if="roster.length < 6" class="lb-add" @click="roster.push({ name: '' })">+ ajouter</button>
+        <button v-if="roster.length < maxP" class="lb-add" @click="roster.push({ name: '' })">+ ajouter</button>
       </div>
 
       <button class="lb-go" :disabled="busy || !canCreate" @click="create">
         {{ busy ? 'Création…' : 'Créer la partie' }}
       </button>
-      <p v-if="!canCreate" class="lb-hint">Donne un nom à au moins 2 joueurs.</p>
+      <p v-if="capHint" class="lb-hint">{{ capHint }}</p>
     </div>
 
     <!-- JOIN -->
@@ -89,11 +89,29 @@ export default {
     }
   },
   computed: {
+    sel() {
+      return this.games.find((g) => g.meta.id === this.gameId) || null
+    },
+    minP() { return (this.sel && this.sel.meta.minPlayers) || 2 },
+    maxP() { return (this.sel && this.sel.meta.maxPlayers) || 6 },
+    capHint() {
+      const named = this.roster.filter((p) => p.name.trim()).length
+      if (named < this.minP) return `Donne un nom à au moins ${this.minP} joueurs.`
+      if (this.maxP < 6 && this.sel) return `${this.sel.meta.name} se joue à ${this.maxP} joueurs.`
+      return ''
+    },
     canCreate() {
-      return this.roster.filter((p) => p.name.trim()).length >= 2
+      const n = this.roster.filter((p) => p.name.trim()).length
+      return n >= this.minP && n <= this.maxP
     },
     placeholder() {
       return 'ABCDEFGH'.slice(0, this.codeLen)
+    },
+  },
+  watch: {
+    gameId() {
+      if (this.roster.length > this.maxP) this.roster = this.roster.slice(0, this.maxP)
+      while (this.roster.length < this.minP) this.roster.push({ name: `Joueur ${this.roster.length + 1}` })
     },
   },
 

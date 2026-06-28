@@ -43,6 +43,7 @@ export const meta = {
   name: 'Morpion',
   short: 'Aligne 3 cases',
   minPlayers: 2,
+  maxPlayers: 2,
   dartsPerTurn: 1,
 }
 
