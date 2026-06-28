@@ -1,6 +1,13 @@
 <template>
-  <div v-if="error" class="rg-fallback">{{ error }}</div>
-  <div v-else-if="!state" class="rg-fallback">Connexion à la partie…</div>
+  <div v-if="error" class="rg-fallback">
+    <div class="rg-fallback-icon">⚠</div>
+    <p>{{ error }}</p>
+    <button class="rg-fallback-btn" @click="quit">Retour à l'accueil</button>
+  </div>
+  <div v-else-if="!state" class="rg-fallback">
+    <div class="rg-spinner"></div>
+    <p>Connexion à la partie…</p>
+  </div>
 
   <RemoteGameShell v-else
     :title="game.meta.name"
@@ -45,6 +52,10 @@
 
   <transition name="rg-toast">
     <div v-if="toast" class="rg-toast">{{ toast }}</div>
+  </transition>
+
+  <transition name="rg-band">
+    <div v-if="state && !online" class="rg-offline">⚡ Hors ligne — reconnexion…</div>
   </transition>
 </template>
 
@@ -120,7 +131,7 @@ export default {
   props: { code: { type: String, required: true } },
   emits: ['home'],
   data() {
-    return { session: null, error: '', busy: false, connected: false, unsub: null, pendingDart: null, pendingFromCount: -1, toast: '', toastTimer: null }
+    return { session: null, error: '', busy: false, connected: false, unsub: null, pendingDart: null, pendingFromCount: -1, toast: '', toastTimer: null, online: typeof navigator !== 'undefined' ? navigator.onLine : true }
   },
   computed: {
     game() { return this.session ? getGame(this.session.gameId) : null },
@@ -188,10 +199,16 @@ export default {
       },
       () => { this.error = 'Erreur de connexion. Vérifie que tu es connecté.' },
     )
+    this._setOnline = () => { this.online = true }
+    this._setOffline = () => { this.online = false }
+    window.addEventListener('online', this._setOnline)
+    window.addEventListener('offline', this._setOffline)
   },
   beforeUnmount() {
     if (this.unsub) this.unsub()
     if (this.toastTimer) clearTimeout(this.toastTimer)
+    window.removeEventListener('online', this._setOnline)
+    window.removeEventListener('offline', this._setOffline)
     leaveSession(this.code)
   },
   methods: {
@@ -240,9 +257,19 @@ export default {
 </script>
 
 <style scoped>
-.rg-fallback { height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; padding: 40px;
+.rg-fallback { height: 100%; display: flex; flex-direction: column; gap: 16px; align-items: center; justify-content: center; text-align: center; padding: 40px;
   font-family: var(--font-hand); font-size: 22px; color: var(--chalk-faint);
   background: radial-gradient(130% 90% at 50% -10%, #20322b, var(--chalk-bg) 72%); }
+.rg-fallback-icon { font-size: 40px; }
+.rg-fallback-btn { border: 2px solid var(--chalk-line); border-radius: 12px; padding: 8px 20px; background: transparent;
+  color: var(--chalk-cream); font-family: var(--font-hand); font-weight: 600; font-size: 19px; cursor: pointer; }
+.rg-spinner { width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--chalk-line2); border-top-color: var(--chalk-gold); animation: rg-spin 0.7s linear infinite; }
+@keyframes rg-spin { to { transform: rotate(360deg); } }
+.rg-offline { position: fixed; left: 50%; top: calc(8px + env(safe-area-inset-top)); transform: translateX(-50%); z-index: 60;
+  background: var(--chalk-gold); color: var(--chalk-bg); font-family: var(--font-hand); font-weight: 700; font-size: 15px;
+  padding: 6px 16px; border-radius: 9999px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4); white-space: nowrap; }
+.rg-band-enter-active, .rg-band-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; }
+.rg-band-enter-from, .rg-band-leave-to { opacity: 0; transform: translate(-50%, -10px); }
 .rg-soon { display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center; text-align: center; padding: 60px 20px; }
 .rg-toast {
   position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom)); transform: translateX(-50%);
