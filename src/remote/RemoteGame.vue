@@ -28,7 +28,11 @@
         <span class="text-[20px]" style="font-family: var(--font-hand); font-weight: 700">{{ entry.player }}</span>
         <span class="text-[13px]" style="color: var(--chalk-faint2)">#{{ total - index }}</span>
       </div>
-      <div class="text-[15px]" style="color: var(--chalk-faint)">{{ entry.text }}</div>
+      <div class="flex justify-between items-baseline gap-2">
+        <span class="text-[15px]" style="color: var(--chalk-faint)">{{ entry.text }}</span>
+        <span v-if="entry.result !== '' && entry.result != null" class="text-[16px] shrink-0"
+          style="font-family: var(--font-display); color: var(--chalk-cream)">{{ entry.result }}</span>
+      </div>
     </template>
   </RemoteGameShell>
 </template>
@@ -105,13 +109,21 @@ export default {
     },
     historyEntries() {
       if (!this.session || !this.game) return []
+      const sel = this.game.selectors
       let s = this.game.createInitialState(this.session.players, this.session.config || {})
       const out = []
       for (const a of this.session.actions || []) {
-        const activeId = this.game.selectors.activePlayerId(s)
+        const activeId = sel.activePlayerId(s)
         const player = (s.players.find((p) => p.id === activeId) || {}).name || ''
-        out.push({ player, text: describeDart(a.dart) })
         s = this.game.reducer(s, a)
+        // resulting value for the player who just threw (from the scoreboard
+        // selector) — gives the history the same "→ result" context as local
+        let result = ''
+        try {
+          const row = (sel.scoreboard(s) || []).find((r) => r.id === activeId)
+          if (row && row.value != null) result = row.value
+        } catch (_) { /* ignore */ }
+        out.push({ player, text: describeDart(a.dart), result })
       }
       return out
     },
