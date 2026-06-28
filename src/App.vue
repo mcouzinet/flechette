@@ -171,38 +171,32 @@
 </template>
 
 <script>
-import Cricket from './components/Cricket.vue';
-import Horloge from './components/Horloge.vue';
-import Game301 from './components/301.vue';
-import Shanghai from './components/Shanghai.vue';
-import Killer from './components/Killer.vue';
-import Morpion from './components/Morpion.vue';
-import HalveIt from './components/HalveIt.vue';
-import Bobs27 from './components/Bobs27.vue';
-import Baseball from './components/Baseball.vue';
-import CountUp from './components/CountUp.vue';
-import Resultats from './components/Resultats.vue';
-import RemoteMode from './remote/RemoteMode.vue';
+import { defineAsyncComponent } from 'vue';
+import GameLoading from './components/GameLoading.vue';
 import { auth } from './firebase.js';
 import { sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from 'firebase/auth';
 import { Capacitor } from '@capacitor/core';
 import { signInWithApple, signInWithGoogle, nativeSignOut } from './services/socialAuth.js';
 
+// Lazy-load each game screen: the home bundle no longer ships the 10 games, the
+// whole remote stack, or Firestore — they download on demand when opened.
+const game = (loader) => defineAsyncComponent({ loader, loadingComponent: GameLoading, delay: 150 });
+
 export default {
   name: "Flechette",
   components: {
-    Cricket,
-    Horloge,
-    Shanghai,
-    Game301,
-    Killer,
-    Morpion,
-    HalveIt,
-    Bobs27,
-    Baseball,
-    CountUp,
-    Resultats,
-    RemoteMode
+    Cricket: game(() => import('./components/Cricket.vue')),
+    Horloge: game(() => import('./components/Horloge.vue')),
+    Shanghai: game(() => import('./components/Shanghai.vue')),
+    Game301: game(() => import('./components/301.vue')),
+    Killer: game(() => import('./components/Killer.vue')),
+    Morpion: game(() => import('./components/Morpion.vue')),
+    HalveIt: game(() => import('./components/HalveIt.vue')),
+    Bobs27: game(() => import('./components/Bobs27.vue')),
+    Baseball: game(() => import('./components/Baseball.vue')),
+    CountUp: game(() => import('./components/CountUp.vue')),
+    Resultats: game(() => import('./components/Resultats.vue')),
+    RemoteMode: game(() => import('./remote/RemoteMode.vue')),
   },
   data() {
     return {
