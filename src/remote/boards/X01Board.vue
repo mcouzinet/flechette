@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-3 xl:gap-5">
     <!-- Cartes joueurs -->
     <div :class="['grid gap-2 pt-3 xl:gap-5 xl:pt-4 grid-cols-1 md:grid-cols-2',
-      players.length === 3 ? 'xl:grid-cols-3' : players.length >= 4 ? 'xl:grid-cols-4' : 'xl:grid-cols-2']">
+      players.length === 1 ? 'xl:grid-cols-1' : players.length === 3 ? 'xl:grid-cols-3' : players.length >= 4 ? 'xl:grid-cols-4' : 'xl:grid-cols-2']">
       <div v-for="(p, i) in players" :key="p.id"
         class="relative rounded-[14px] p-2.5 xl:p-5 transition-all duration-300"
         :style="cardStyle(p, i)">
@@ -14,9 +14,12 @@
             <div class="text-2xl xl:text-[56px] leading-none xl:mb-1" :style="{ fontFamily: 'var(--font-display)', color: scoreColor(p.score) }">{{ p.score }}</div>
             <div class="hidden xl:block text-[13px] uppercase tracking-wider" style="color: var(--chalk-faint2)">Points restants</div>
           </div>
-          <div class="flex gap-1.5 xl:justify-center xl:gap-2 shrink-0">
+          <div class="flex gap-1.5 xl:justify-center xl:gap-2 xl:mb-3 shrink-0">
             <div v-for="d in 3" :key="d" class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full"
               :style="{ background: (p.active ? d <= state.dartsLeft : true) ? 'var(--chalk-gold)' : 'var(--chalk-line2)' }"></div>
+          </div>
+          <div class="text-[13px] xl:text-[15px] ml-auto xl:ml-0 shrink-0" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
+            Moy: {{ playerAverage(p.id).toFixed(1) }}
           </div>
         </div>
       </div>
@@ -87,6 +90,14 @@ export default {
       return { border, background: bg }
     },
     scoreColor(s) { return s <= 0 ? 'var(--chalk-green)' : s < 20 ? 'var(--chalk-red)' : s < 50 ? 'var(--chalk-gold)' : 'var(--chalk-cream)' },
+    // Per-player average = points scored / darts thrown — same definition the
+    // reducer exposes via `avg` (scoreboard sub). Derived from state so it stays
+    // correct after undo/reset without parsing the localized "moy." string.
+    playerAverage(id) {
+      const thrown = this.state.thrown ? this.state.thrown[id] : 0
+      if (!thrown) return 0
+      return (this.state.start - this.state.scores[id]) / thrown
+    },
     selectScore(n) { this.selectedScore = n },
     selectMiss() { this.scoreType = 'miss'; this.selectedScore = 0 },
     validate() {

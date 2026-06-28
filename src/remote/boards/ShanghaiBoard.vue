@@ -51,7 +51,20 @@
 
     <!-- Saisir le score -->
     <div class="rounded-[14px] p-3 xl:p-5" style="border: 2px dashed var(--chalk-line)">
-      <h3 class="text-base xl:text-[22px] mb-2 xl:mb-5 text-center" style="font-family: var(--font-display); letter-spacing: 0.5px">SAISIR LE SCORE</h3>
+      <h3 class="text-base xl:text-[22px] mb-2 xl:mb-3 text-center" style="font-family: var(--font-display); letter-spacing: 0.5px">SAISIR LE SCORE</h3>
+
+      <!-- Joueur actif + cible + flechettes restantes (mirror de la version classique) -->
+      <div v-if="activePlayer" class="text-center mb-3 xl:mb-5">
+        <div class="text-2xl xl:text-4xl" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-cream)">{{ activePlayer.name }}</div>
+        <div class="text-xs xl:text-sm mt-0.5" style="font-family: var(--font-display); letter-spacing: 0.5px; color: var(--chalk-faint)">
+          Cible : <span style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-gold)">{{ state.round }}</span>
+        </div>
+        <div class="flex gap-1.5 justify-center mt-2">
+          <div v-for="d in 3" :key="d"
+            class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full"
+            :style="{ background: d <= state.dartsLeft ? 'var(--chalk-gold)' : 'var(--chalk-line2)' }"></div>
+        </div>
+      </div>
 
       <!-- Selecteur de type (vise auto le numero du round) -->
       <div class="grid grid-cols-2 gap-2 xl:flex xl:flex-wrap xl:gap-3 xl:justify-center">
@@ -102,8 +115,14 @@ export default {
   props: { state: { type: Object, required: true }, game: { type: Object, required: true } },
   emits: ['throw'],
   computed: {
+    activeId() {
+      return this.game.selectors.activePlayerId(this.state)
+    },
+    activePlayer() {
+      return this.state.players.find((p) => p.id === this.activeId) || null
+    },
     players() {
-      const active = this.game.selectors.activePlayerId(this.state)
+      const active = this.activeId
       return this.state.players.map((p) => ({
         id: p.id,
         name: p.name,

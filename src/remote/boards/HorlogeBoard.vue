@@ -9,26 +9,24 @@
         <div v-if="p.active && !state.finished" class="card-badge" style="background: var(--chalk-gold); color: var(--chalk-bg)">À JOUER</div>
         <div v-if="p.winner" class="card-badge" style="background: var(--chalk-green); color: var(--chalk-bg)">GAGNANT</div>
 
-        <div class="flex items-center gap-3 xl:block xl:text-center">
-          <h3 class="text-base xl:text-[26px] xl:mb-3 shrink-0" style="font-family: var(--font-hand); font-weight: 600">{{ p.name }}</h3>
+        <div class="text-center">
+          <h3 class="text-lg xl:text-[26px] mb-2 xl:mb-3" style="font-family: var(--font-hand); font-weight: 700">{{ p.name }}</h3>
 
           <!-- Cible actuelle -->
-          <div class="shrink-0 xl:mb-3">
-            <div class="hidden xl:block text-[13px] uppercase tracking-wider mb-1" style="color: var(--chalk-faint2)">Cible actuelle</div>
-            <div class="text-2xl xl:text-[56px] leading-none xl:mb-1 transition-all duration-300"
+          <div class="relative mb-2 xl:mb-3">
+            <div class="text-[12px] xl:text-[13px] uppercase tracking-wider mb-1" style="color: var(--chalk-faint2)">Cible actuelle</div>
+            <div class="text-4xl xl:text-[56px] leading-none mb-1 xl:mb-2 transition-all duration-300"
               :style="{ fontFamily: 'var(--font-display)', color: targetColor(p) }">{{ targetText(p) }}</div>
+            <div class="text-[14px] xl:text-[15px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">{{ p.passed }}/{{ totalTargets }} terminés</div>
           </div>
 
           <!-- Fléchettes restantes -->
-          <div class="flex gap-1.5 xl:justify-center xl:gap-2 shrink-0">
+          <div class="flex justify-center gap-1.5 xl:gap-2 mb-2 xl:mb-3">
             <div v-for="d in 3" :key="d" class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full transition-all duration-300"
               :style="{ background: (p.active ? d <= state.dartsLeft : p.winner) ? 'var(--chalk-gold)' : 'var(--chalk-line2)' }"></div>
           </div>
-        </div>
 
-        <!-- Progression -->
-        <div class="hidden xl:block mt-3">
-          <div class="text-[15px] text-center mb-1" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">{{ p.passed }}/{{ totalTargets }} terminés</div>
+          <!-- Barre de progression -->
           <div class="w-full rounded-full h-[10px]" style="background: var(--chalk-line2)">
             <div class="h-[10px] rounded-full transition-all duration-500"
               :style="{ width: (p.passed / totalTargets * 100) + '%', background: 'var(--chalk-green)' }"></div>
@@ -51,7 +49,7 @@
       </div>
 
       <!-- Grille des numéros -->
-      <div class="grid grid-cols-4 lg:grid-cols-7 gap-1.5 mb-3 xl:gap-3 xl:mb-5">
+      <div class="grid grid-cols-3 lg:grid-cols-7 gap-1.5 mb-3 xl:gap-3 xl:mb-5">
         <button v-for="n in targetNumbers" :key="n" @click="hit(n)" :disabled="state.finished"
           class="horloge-num"
           :style="numStyle(n)">
@@ -118,7 +116,7 @@ export default {
   },
   methods: {
     targetText(p) {
-      if (p.winner || p.target >= DONE) return '✓ terminé'
+      if (p.winner || p.target >= DONE) return 'FINI'
       return p.target === BULL ? 'BULLE' : p.target
     },
     targetColor(p) {

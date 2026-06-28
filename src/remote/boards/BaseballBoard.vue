@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-3 xl:gap-5">
-    <!-- Controles de jeu / entete manche -->
-    <div class="rounded-[14px] p-3 xl:p-5" style="border: 2px dashed var(--chalk-line); background: transparent">
+    <!-- Controles de jeu / entete manche (cachés une fois la partie finie, comme le classique) -->
+    <div v-if="!state.finished" class="rounded-[14px] p-3 xl:p-5" style="border: 2px dashed var(--chalk-line); background: transparent">
       <div class="text-center mb-3 xl:mb-4">
         <div class="text-sm xl:text-base" style="font-family: var(--font-display); letter-spacing: 0.5px; color: var(--chalk-faint)">
           Manche {{ state.inning }}/{{ state.innings }} &mdash; Cible :
@@ -19,14 +19,14 @@
       </div>
 
       <div class="grid grid-cols-2 gap-2 xl:flex xl:flex-wrap xl:gap-3 xl:justify-center">
-        <button @click="addRuns(1)" :disabled="state.finished" class="bb-action-btn"
-          :style="{ color: 'var(--chalk-green)', borderColor: 'var(--chalk-green)', opacity: state.finished ? 0.4 : 1, cursor: state.finished ? 'not-allowed' : 'pointer' }">Simple</button>
-        <button @click="addRuns(2)" :disabled="state.finished" class="bb-action-btn"
-          :style="{ color: 'var(--chalk-gold)', borderColor: 'var(--chalk-gold)', opacity: state.finished ? 0.4 : 1, cursor: state.finished ? 'not-allowed' : 'pointer' }">Double</button>
-        <button @click="addRuns(3)" :disabled="state.finished" class="bb-action-btn"
-          :style="{ color: 'var(--chalk-red)', borderColor: 'var(--chalk-red)', opacity: state.finished ? 0.4 : 1, cursor: state.finished ? 'not-allowed' : 'pointer' }">Triple</button>
-        <button @click="addRuns(0)" :disabled="state.finished" class="bb-action-btn"
-          :style="{ color: 'var(--chalk-faint)', borderColor: 'var(--chalk-faint)', borderStyle: 'dashed', opacity: state.finished ? 0.4 : 1, cursor: state.finished ? 'not-allowed' : 'pointer' }">Manqu&eacute;</button>
+        <button @click="addRuns(1)" class="bb-action-btn"
+          style="color: var(--chalk-green); border-color: var(--chalk-green)">Simple</button>
+        <button @click="addRuns(2)" class="bb-action-btn"
+          style="color: var(--chalk-gold); border-color: var(--chalk-gold)">Double</button>
+        <button @click="addRuns(3)" class="bb-action-btn"
+          style="color: var(--chalk-red); border-color: var(--chalk-red)">Triple</button>
+        <button @click="addRuns(0)" class="bb-action-btn"
+          style="color: var(--chalk-faint); border-color: var(--chalk-faint); border-style: dashed">Manqu&eacute;</button>
       </div>
     </div>
 
@@ -126,9 +126,9 @@ export default {
 .bb-action-btn {
   font-family: var(--font-display); letter-spacing: 0.5px; font-size: 22px;
   background: transparent; border: 2px solid; border-radius: 14px;
-  padding: 16px 0; line-height: 1.1; transition: all 0.2s;
+  padding: 16px 0; cursor: pointer; line-height: 1.1; transition: all 0.2s;
 }
-.bb-action-btn:not(:disabled):hover {
+.bb-action-btn:hover {
   background: rgba(241,230,203,0.06);
 }
 </style>

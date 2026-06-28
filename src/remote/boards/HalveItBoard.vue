@@ -24,20 +24,50 @@
 
     <!-- Cible courante + saisie -->
     <div v-if="!state.finished" class="rounded-[14px] p-3 xl:p-5" style="border: 2px dashed var(--chalk-line)">
-      <div class="text-center mb-3 xl:mb-5">
+      <div class="text-center mb-3 xl:mb-4">
         <div class="text-sm xl:text-base" style="font-family: var(--font-display); letter-spacing: 0.5px; color: var(--chalk-faint)">
-          Round {{ state.round + 1 }}/{{ state.rounds.length }}
+          Round {{ state.round + 1 }}/{{ state.rounds.length }} &mdash; Cible :
+          <span style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-gold); font-size: 2.5em; vertical-align: middle">{{ currentLabel }}</span>
         </div>
-        <div class="text-xl xl:text-[30px] mt-1" style="font-family: var(--font-display); letter-spacing: 0.5px">
-          Cible : <span style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-gold)">{{ currentLabel }}</span>
+        <div class="text-3xl xl:text-4xl mt-1" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-cream)">{{ activePlayer?.name }}</div>
+        <div class="flex gap-1.5 justify-center mt-2">
+          <div v-for="dart in 3" :key="dart"
+            class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full"
+            :style="{ background: dart <= dartsLeft ? 'var(--chalk-gold)' : 'var(--chalk-line2)' }">
+          </div>
         </div>
       </div>
 
       <div class="grid grid-cols-2 gap-2 xl:flex xl:flex-wrap xl:gap-3 xl:justify-center">
-        <button @click="hit" class="hi-action-btn"
+        <!-- Type-specific hit buttons mirror the classic; all emit { hit:true } since
+             the reducer adds the round's full value per hit (the multiplier is cosmetic). -->
+        <button v-if="target.type === 'number'" @click="hit" class="hi-action-btn"
+          style="color: var(--chalk-green); border-color: var(--chalk-green)">
+          {{ target.value }} touché !
+        </button>
+        <button v-else-if="target.type === 'double'" @click="hit" class="hi-action-btn"
+          style="color: var(--chalk-gold); border-color: var(--chalk-gold)">
+          Double {{ target.value }} touché !
+        </button>
+        <button v-else-if="target.type === 'triple'" @click="hit" class="hi-action-btn"
+          style="color: var(--chalk-red); border-color: var(--chalk-red)">
+          Triple {{ target.value }} touché !
+        </button>
+        <template v-else-if="target.type === 'bull'">
+          <button @click="hit" class="hi-action-btn"
+            style="color: var(--chalk-green); border-color: var(--chalk-green)">
+            Simple bulle (25)
+          </button>
+          <button @click="hit" class="hi-action-btn"
+            style="color: var(--chalk-gold); border-color: var(--chalk-gold)">
+            Double bulle (50)
+          </button>
+        </template>
+        <button v-else @click="hit" class="hi-action-btn"
           style="color: var(--chalk-green); border-color: var(--chalk-green)">
           {{ currentLabel }} touché !
         </button>
+
         <button @click="miss" class="hi-action-btn"
           style="color: var(--chalk-faint); border-color: var(--chalk-faint); border-style: dashed">
           Manqué
@@ -99,8 +129,12 @@
    emits: 'throw' (the game-specific dart). undo/reset/back are handled by RemoteGameShell.
 
    Halve It is presentational only: it derives everything from `state`.
-   Input: two buttons mirroring the classic — "{label} touché !" emits { hit: true }
-   and "Manqué" emits { miss: true }, where label = state.rounds[state.round].label.
+   Input mirrors the classic: a type-specific "touché" button (number → green,
+   double → gold, triple → red, bull → green "Simple bulle (25)" + gold "Double
+   bulle (50)") plus a dashed "Manqué". Every hit variant emits { hit: true } and
+   "Manqué" emits { miss: true } — the reducer adds the round's full value per hit,
+   so the multiplier shown is cosmetic. The target type/value is parsed from the
+   round label (state.rounds[state.round].label), the classic's own source of truth.
 
    Round table: rows are the 9 fixed targets (round labels), columns are players.
    The reducer keeps the authoritative cumulative total (scores[id]) and the list of
@@ -116,6 +150,27 @@ export default {
     currentLabel() {
       const r = this.state.rounds[this.state.round]
       return r ? r.label : ''
+    },
+    // Active player (drives the target panel's name + turn dots), or null when finished.
+    activePlayer() {
+      const id = this.game.selectors.activePlayerId(this.state)
+      return this.state.players.find((p) => p.id === id) || null
+    },
+    // Darts remaining in the current turn (0 once the game is over).
+    dartsLeft() {
+      return this.state.finished ? 0 : this.state.dartsLeft
+    },
+    // Type + display value parsed from the round label (the classic's own source
+    // of truth). The reducer stores only { label, value(=points/hit) }, so we derive
+    // the cosmetic multiplier/colour here — every variant still emits { hit:true }.
+    target() {
+      const label = this.currentLabel
+      let m
+      if (/^bull/i.test(label)) return { type: 'bull', value: 25 }
+      if ((m = label.match(/^Double\s+(\d+)/i))) return { type: 'double', value: Number(m[1]) }
+      if ((m = label.match(/^Triple\s+(\d+)/i))) return { type: 'triple', value: Number(m[1]) }
+      if ((m = label.match(/^(\d+)$/))) return { type: 'number', value: Number(m[1]) }
+      return { type: 'other', value: label }
     },
     players() {
       const active = this.game.selectors.activePlayerId(this.state)

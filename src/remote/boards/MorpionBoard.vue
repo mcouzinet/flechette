@@ -45,6 +45,38 @@
         </div>
       </div>
     </div>
+
+    <!-- Controles de jeu : numero touche + grille alternative (mirroir du classique) -->
+    <div v-if="!state.finished" class="rounded-[14px] p-3 xl:p-5" style="border: 2px dashed var(--chalk-line); background: rgba(241,230,203,0.03)">
+      <div class="text-center mb-3 xl:mb-4">
+        <div class="text-sm xl:text-base" style="font-family: var(--font-display); letter-spacing: 0.5px; color: var(--chalk-faint)">
+          Selectionnez le numero touche
+        </div>
+        <div v-if="currentPlayer" class="text-2xl xl:text-4xl mt-1" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-cream)">
+          {{ currentPlayer.name }}
+          <span :style="{ color: markColor(currentPlayer.index) }">({{ MARKS[currentPlayer.index] }})</span>
+        </div>
+      </div>
+
+      <!-- Grille de numeros alternatifs -->
+      <div class="grid grid-cols-3 gap-2 max-w-[240px] mx-auto">
+        <button v-for="(cell, index) in cells" :key="index"
+          @click="claimCell(index)"
+          :disabled="cell.owner !== null || state.finished"
+          class="morpion-num-btn h-[52px] xl:h-[58px] rounded-[14px] text-[20px] xl:text-[22px]"
+          :class="cell.owner !== null ? 'morpion-num-btn--taken' : ''"
+          style="font-family: var(--font-display); letter-spacing: 0.5px">
+          {{ cell.number }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Message match nul -->
+    <div v-if="state.draw" class="rounded-[14px] p-5 text-center" style="border: 2px dashed var(--chalk-line); background: rgba(241,230,203,0.03)">
+      <div class="text-[36px] mb-3 opacity-60">&#9876;</div>
+      <h3 class="text-[24px] mb-2" style="font-family: var(--font-display); color: var(--chalk-gold)">MATCH NUL !</h3>
+      <p style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">Aucun joueur n'a reussi a aligner 3 cases.</p>
+    </div>
   </div>
 </template>
 
@@ -80,6 +112,13 @@ export default {
         active: p.id === active,
         winner: this.state.winnerId === p.id,
       }))
+    },
+    // player whose turn it is (null once the game is finished), for the controls header
+    currentPlayer() {
+      const active = this.game.selectors.activePlayerId(this.state)
+      if (active == null) return null
+      const index = this.state.players.findIndex((p) => p.id === active)
+      return index < 0 ? null : { name: this.state.players[index].name, index }
     },
   },
   methods: {
@@ -134,6 +173,26 @@ export default {
 .morpion-cell--disabled {
   opacity: 0.35;
   cursor: not-allowed !important;
+}
+
+/* Number buttons (alternative claim path, mirrors the classic) */
+.morpion-num-btn {
+  background: transparent;
+  border: 2px dashed var(--chalk-line);
+  color: var(--chalk-cream);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.morpion-num-btn:not(.morpion-num-btn--taken):hover {
+  border-color: var(--chalk-gold);
+  background: rgba(236, 198, 106, 0.08);
+  color: var(--chalk-gold);
+}
+.morpion-num-btn--taken {
+  opacity: 0.2;
+  cursor: not-allowed;
+  border-style: dashed;
+  color: var(--chalk-faint2);
 }
 .card-badge {
   position: absolute;

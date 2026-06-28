@@ -1,8 +1,8 @@
 <template>
   <div class="flex flex-col gap-3 xl:gap-5">
-    <!-- Indicateur de manche -->
+    <!-- Indicateur de round -->
     <div class="text-center pt-2">
-      <span class="text-[15px] uppercase tracking-wider" style="color: var(--chalk-faint2)">Manche</span>
+      <span class="text-[15px] uppercase tracking-wider" style="color: var(--chalk-faint2)">Round</span>
       <div class="flex justify-center gap-2 mt-1">
         <div v-for="r in state.rounds" :key="r"
           class="w-8 h-8 xl:w-10 xl:h-10 rounded-full flex items-center justify-center text-sm xl:text-base transition-all duration-300"
@@ -31,9 +31,12 @@
             <div class="text-2xl xl:text-[56px] leading-none xl:mb-1" :style="{ fontFamily: 'var(--font-display)', color: 'var(--chalk-cream)' }">{{ p.score }}</div>
             <div class="hidden xl:block text-[13px] uppercase tracking-wider" style="color: var(--chalk-faint2)">Points</div>
           </div>
-          <div class="flex gap-1.5 xl:justify-center xl:gap-2 shrink-0">
+          <div class="flex gap-1.5 xl:justify-center xl:gap-2 xl:mb-3 shrink-0">
             <div v-for="d in 3" :key="d" class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full"
               :style="{ background: (p.active ? d <= state.dartsLeft : true) ? 'var(--chalk-gold)' : 'var(--chalk-line2)' }"></div>
+          </div>
+          <div class="text-[13px] xl:text-[15px] ml-auto xl:ml-0 shrink-0" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
+            Moy: {{ p.average.toFixed(1) }}
           </div>
         </div>
       </div>
@@ -82,6 +85,7 @@ export default {
       const active = this.game.selectors.activePlayerId(this.state)
       return this.state.players.map((p) => ({
         id: p.id, name: p.name, score: this.state.scores[p.id],
+        average: this.state.thrown[p.id] ? this.state.scores[p.id] / this.state.thrown[p.id] : 0,
         active: p.id === active, winner: this.state.winnerId === p.id,
       }))
     },

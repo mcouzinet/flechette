@@ -54,6 +54,12 @@ import HalveItBoard from './boards/HalveItBoard.vue'
 import MorpionBoard from './boards/MorpionBoard.vue'
 import KillerBoard from './boards/KillerBoard.vue'
 import CricketStandings from './boards/CricketStandings.vue'
+import ShanghaiStandings from './boards/ShanghaiStandings.vue'
+import HorlogeStandings from './boards/HorlogeStandings.vue'
+import BaseballStandings from './boards/BaseballStandings.vue'
+import Bobs27Standings from './boards/Bobs27Standings.vue'
+import HalveItStandings from './boards/HalveItStandings.vue'
+import KillerStandings from './boards/KillerStandings.vue'
 import { getGame, buildState } from './games/index.js'
 import { subscribe, throwDart, undoLast, resetGame, leaveSession } from './session.js'
 import { notifySuccess } from '../services/haptics.js'
@@ -77,6 +83,12 @@ const BOARDS = {
 // classic games that put a standings/ranking aside next to the board.
 const STANDINGS = {
   cricket: CricketStandings,
+  shanghai: ShanghaiStandings,
+  horloge: HorlogeStandings,
+  baseball: BaseballStandings,
+  bobs27: Bobs27Standings,
+  halveit: HalveItStandings,
+  killer: KillerStandings,
 }
 
 function describeDart(dart) {

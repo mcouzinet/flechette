@@ -17,8 +17,8 @@
             <div class="hidden xl:block text-[13px] uppercase tracking-wider" style="color: var(--chalk-faint2)">Points</div>
           </div>
           <div class="flex gap-1.5 xl:justify-center xl:gap-2 shrink-0">
-            <div v-for="d in 3" :key="d" class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full"
-              :style="{ background: (p.active ? d <= state.dartsLeft : false) ? 'var(--chalk-gold)' : 'var(--chalk-line2)' }"></div>
+            <div v-for="d in 3" :key="d" class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full transition-all duration-300"
+              :style="{ background: dartFilled(p, d) ? 'var(--chalk-gold)' : 'var(--chalk-line2)' }"></div>
           </div>
         </div>
       </div>
@@ -33,6 +33,10 @@
           <span class="text-[17px]" style="color: var(--chalk-faint2)">(+{{ gain }} / -{{ gain }} pts)</span>
         </div>
         <div class="text-2xl xl:text-4xl mt-1" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-cream)">{{ activeName }}</div>
+        <div class="flex gap-1.5 justify-center mt-2">
+          <div v-for="d in 3" :key="d" class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full"
+            :style="{ background: !state.finished && d <= state.dartsLeft ? 'var(--chalk-gold)' : 'var(--chalk-line2)' }"></div>
+        </div>
       </div>
 
       <div class="grid grid-cols-2 gap-2 xl:flex xl:flex-wrap xl:gap-3 xl:justify-center">
@@ -97,6 +101,14 @@ export default {
       return { border, background: bg, opacity: p.eliminated ? 0.55 : 1 }
     },
     scoreColor(s) { return s <= 0 ? 'var(--chalk-red)' : s < 27 ? 'var(--chalk-gold)' : 'var(--chalk-cream)' },
+    // Dart dots per card: the active player shows darts left in the current
+    // turn; everyone else's turn is "full" (3 darts), matching the classic
+    // where dartsLeft resets to 3 between turns. Eliminated cards stay empty.
+    dartFilled(p, d) {
+      if (p.eliminated) return false
+      if (p.active) return !this.state.finished && d <= this.state.dartsLeft
+      return true
+    },
     hit() { if (!this.state.finished) this.$emit('throw', { hit: true }) },
     miss() { if (!this.state.finished) this.$emit('throw', { miss: true }) },
   },
