@@ -73,3 +73,14 @@ a,
   color: var(--chalk-green);
   transition: 0.4s;
 }
+
+/* Accessibility: honour users who prefer reduced motion (spinners, transitions,
+   the score/card animations all fall back to near-instant). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

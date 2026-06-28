@@ -182,10 +182,12 @@ export default {
     'state.finished'(now, was) {
       if (now && was === false) notifySuccess()
     },
-    // drop the optimistic overlay once the live snapshot includes our throw
+    // Drop the optimistic overlay once the snapshot moves off our pre-throw log
+    // length — whether our action landed (grew), another device's did, or the
+    // log was reset/rewound under us (shrank). Only an unchanged length waits.
     session(now) {
-      if (this.pendingDart && now && (now.actions || []).length > this.pendingFromCount) {
-        this.pendingDart = null
+      if (this.pendingDart && now && (now.actions || []).length !== this.pendingFromCount) {
+        this.clearPending()
       }
     },
   },
@@ -222,15 +224,26 @@ export default {
       this.pendingFromCount = this.session && this.session.actions ? this.session.actions.length : 0
       try {
         const applied = await throwDart(this.code, dart)
-        if (applied === false) this.pendingDart = null // finished elsewhere; nothing to reconcile
+        if (applied === false) this.clearPending() // finished elsewhere; nothing to reconcile
       } catch (e) {
-        this.pendingDart = null // revert the optimistic dart
-        this.showToast('Tir refusé, réessaie')
         console.error(e)
+        const msg = String((e && e.message) || '')
+        if (msg.includes('invalide') || msg.includes('introuvable')) {
+          this.clearPending() // definitely never committed — revert immediately
+          this.showToast('Tir refusé')
+        } else {
+          // network/unknown: the write may have committed before the drop, so
+          // don't revert eagerly — only if the snapshot never confirms it.
+          const thrown = dart
+          setTimeout(() => {
+            if (this.pendingDart === thrown) { this.clearPending(); this.showToast('Tir non enregistré, réessaie') }
+          }, 2500)
+        }
       } finally {
         this.busy = false
       }
     },
+    clearPending() { this.pendingDart = null; this.pendingFromCount = -1 },
     showToast(msg) {
       this.toast = msg
       if (this.toastTimer) clearTimeout(this.toastTimer)

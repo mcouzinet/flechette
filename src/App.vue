@@ -173,6 +173,7 @@
 <script>
 import { defineAsyncComponent } from 'vue';
 import GameLoading from './components/GameLoading.vue';
+import GameLoadError from './components/GameLoadError.vue';
 import { auth } from './firebase.js';
 import { sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from 'firebase/auth';
 import { Capacitor } from '@capacitor/core';
@@ -180,7 +181,7 @@ import { signInWithApple, signInWithGoogle, nativeSignOut } from './services/soc
 
 // Lazy-load each game screen: the home bundle no longer ships the 10 games, the
 // whole remote stack, or Firestore — they download on demand when opened.
-const game = (loader) => defineAsyncComponent({ loader, loadingComponent: GameLoading, delay: 150 });
+const game = (loader) => defineAsyncComponent({ loader, loadingComponent: GameLoading, errorComponent: GameLoadError, delay: 150, timeout: 15000 });
 
 export default {
   name: "Flechette",
