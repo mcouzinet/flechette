@@ -71,4 +71,27 @@ describe('remote boards emit only darts their reducer accepts', () => {
     expect(darts).toContainEqual({ n: 20, mult: 3 })
     expect(game.reducer(state, { type: 'THROW', dart: { n: 20, mult: 3 } }).scores.p0).toBe(301 - 60)
   })
+
+  // Killer is the only board with phase-dependent emits ({assign} in setup,
+  // {self}/{target}/{miss} in game). Exercise all three states.
+  it('killer: setup, non-killer and killer game phases all emit valid darts', async () => {
+    const game = GAMES.killer
+    const THROW = (dart) => ({ type: 'THROW', dart })
+    const setup = game.createInitialState(PLAYERS.slice(0, 2), {})
+    const gamePhase = game.reducer(game.reducer(setup, THROW({ assign: 20 })), THROW({ assign: 19 }))
+    expect(gamePhase.phase).toBe('game')
+    // make both players killers so a killer is the active player (target buttons)
+    const killerActive = game.reducer(game.reducer(gamePhase, THROW({ self: true })), THROW({ self: true }))
+
+    for (const st of [setup, gamePhase, killerActive]) {
+      const wrapper = mount(KillerBoard, { props: { state: st, game } })
+      for (const btn of wrapper.findAll('button')) { if (!btn.element.disabled) await btn.trigger('click') }
+      const darts = (wrapper.emitted('throw') || []).map((e) => e[0])
+      expect(darts.length, `killer emitted nothing in phase ${st.phase}`).toBeGreaterThan(0)
+      for (const dart of darts) {
+        expect(game.validate(dart), `killer emitted invalid ${JSON.stringify(dart)}`).toBe(true)
+        expect(() => game.reducer(st, THROW(dart)), `killer reducer threw on ${JSON.stringify(dart)}`).not.toThrow()
+      }
+    }
+  })
 })
