@@ -7,7 +7,7 @@
     <GameHeader
       title="HALVE-IT"
       :is-fullscreen="isFullscreen"
-      @back="$parent.currentComponent = null"
+      @back="$emit('exit')"
       @show-rules="showRulesModal = true"
       @toggle-fullscreen="toggleFullscreen"
       @confirm-reset="confirmReset" />
@@ -275,6 +275,7 @@ export default {
   name: "HalveIt",
   components: { GameHeader, GameModals, HistoryPanel },
   mixins: [fullscreenMixin, keyboardUndoMixin],
+  emits: ['exit'],
   props: {
     players: {
       type: Array,

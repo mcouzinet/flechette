@@ -8,7 +8,7 @@
       title="CRICKET"
       :subtitle="bullModeSubtitle"
       :is-fullscreen="isFullscreen"
-      @back="$parent.currentComponent = null"
+      @back="$emit('exit')"
       @show-rules="showRulesModal = true"
       @toggle-fullscreen="toggleFullscreen"
       @confirm-reset="confirmReset">
@@ -170,7 +170,7 @@
         <p><span style="color: var(--chalk-cream)">Fermer une zone :</span> Toucher 3 fois la zone. Les marques s'affichent : / (1 touche), ✕ (2 touches), ⊘ (fermé).</p>
         <p><span style="color: var(--chalk-cream)">Marquer des points :</span> Quand ta zone est fermée mais pas celle d'un adversaire, chaque touche supplémentaire lui ajoute des points.</p>
         <p><span style="color: var(--chalk-cream)">Victoire :</span> Le premier à fermer toutes les zones ET avoir le score le plus bas gagne.</p>
-        <p><span style="color: var(--chalk-cream)">Astuce :</span> Tape sur une case dans la grille pour noter une touche. Backspace pour annuler le dernier coup.</p>
+        <p><span style="color: var(--chalk-cream)">Astuce :</span> Tape sur une case dans la grille pour noter une touche. Le bouton « Annuler » (ou Backspace au clavier) retire le dernier coup.</p>
       </template>
       <template #winner-stats>
         <div>
@@ -227,6 +227,7 @@ export default {
   name: "Cricket",
   components: { GameHeader, GameModals, HistoryPanel },
   mixins: [fullscreenMixin, keyboardUndoMixin],
+  emits: ['exit'],
   props: {
     players: {
       type: Array,

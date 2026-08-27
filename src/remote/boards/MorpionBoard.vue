@@ -75,7 +75,7 @@
     <div v-if="state.draw" class="rounded-[14px] p-5 text-center" style="border: 2px dashed var(--chalk-line); background: rgba(241,230,203,0.03)">
       <div class="text-[36px] mb-3 opacity-60">&#9876;</div>
       <h3 class="text-[24px] mb-2" style="font-family: var(--font-display); color: var(--chalk-gold)">MATCH NUL !</h3>
-      <p style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">Aucun joueur n'a reussi a aligner 3 cases.</p>
+      <p style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">Aucun joueur n'a réussi à aligner 3 cases.</p>
     </div>
   </div>
 </template>

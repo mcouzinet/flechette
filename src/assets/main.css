@@ -62,6 +62,19 @@ html, body, #app {
 /* Hide fullscreen button in standalone/PWA mode */
 .is-standalone .btn-fullscreen { display: none !important; }
 
+/* Native app: scrolled content slides under the status bar / Dynamic Island —
+   keep a chalkboard-toned veil there so text never collides with system UI. */
+.statusbar-shim { display: none; }
+.is-native .statusbar-shim {
+  display: block;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: calc(env(safe-area-inset-top) + 10px);
+  z-index: 40;
+  pointer-events: none;
+  background: linear-gradient(to bottom, #1c2b25 72%, rgba(28,43,37,0.9) 88%, rgba(28,43,37,0) 100%);
+}
+
 /* Prevent double-tap zoom on touch devices */
 button, select, input, [role="button"] {
   touch-action: manipulation;

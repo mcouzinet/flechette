@@ -33,7 +33,8 @@
       <div class="lb-players">
         <div v-for="(p, i) in roster" :key="i" class="lb-prow">
           <span class="lb-pnum">{{ i + 1 }}.</span>
-          <input v-model="p.name" :placeholder="`joueur ${i + 1}`" class="lb-pinput" />
+          <input v-model="p.name" :placeholder="`joueur ${i + 1}`" class="lb-pinput"
+            autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="done" />
           <button v-if="roster.length > minP" class="lb-px" @click="roster.splice(i, 1)">×</button>
         </div>
         <button v-if="roster.length < maxP" class="lb-add" @click="roster.push({ name: '' })">+ ajouter</button>
@@ -49,9 +50,11 @@
     <div v-else class="lb-pane">
       <div class="lb-label">Code de la partie</div>
       <input v-model="code" :placeholder="placeholder" :maxlength="codeLen"
-        class="lb-code" @input="code = code.toUpperCase()" />
+        class="lb-code" @input="code = code.toUpperCase()"
+        autocapitalize="characters" autocorrect="off" autocomplete="off" spellcheck="false" enterkeyhint="next" />
       <div class="lb-label">Ton nom</div>
-      <input v-model="joinName" placeholder="ton nom" class="lb-pinput lb-joinname" />
+      <input v-model="joinName" placeholder="ton nom" class="lb-pinput lb-joinname"
+        autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="go" />
       <button class="lb-go" :disabled="busy || code.trim().length !== codeLen" @click="join">
         {{ busy ? 'Connexion…' : 'Rejoindre' }}
       </button>

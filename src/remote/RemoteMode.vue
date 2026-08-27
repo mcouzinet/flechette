@@ -10,6 +10,7 @@ import RemoteGame from './RemoteGame.vue'
 export default {
   name: 'RemoteMode',
   components: { RemoteLobby, RemoteGame },
+  emits: ['exit'],
   props: { players: { type: Array, default: () => [] } },
   data() {
     return { view: 'lobby', code: '' }
@@ -20,8 +21,7 @@ export default {
       this.view = 'game'
     },
     goHome() {
-      // same pattern the local games use to return to the home screen
-      if (this.$parent) this.$parent.currentComponent = null
+      this.$emit('exit')
     },
   },
 }

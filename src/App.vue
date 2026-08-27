@@ -6,6 +6,9 @@
     <div class="absolute inset-[10px] border-2 rounded-[10px] pointer-events-none opacity-50 z-0"
       style="border-color: var(--chalk-line)"></div>
 
+    <!-- Voile sous la status bar (app native) : le contenu qui scrolle passe dessous -->
+    <div class="statusbar-shim" aria-hidden="true"></div>
+
     <!-- Page d'accueil -->
     <div v-if="!currentComponent" class="flex-1 flex flex-col xl:overflow-hidden relative z-10">
 
@@ -56,13 +59,14 @@
               <span class="w-6 text-[22px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">{{ index + 1 }}.</span>
               <div class="chalk-target w-5 h-5" :style="{ color: playerColors[index % playerColors.length] }"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="currentColor" opacity=".25"/><circle cx="20" cy="20" r="13" fill="var(--chalk-bg, #142019)"/><circle cx="20" cy="20" r="8" fill="currentColor" opacity=".25"/><circle cx="20" cy="20" r="3" fill="currentColor"/></svg></div>
               <span class="flex-1 text-[26px] xl:text-[30px] leading-none" style="font-family: var(--font-hand); font-weight: 600">{{ player.name }}</span>
-              <button @click="removePlayer(player.id)" class="text-2xl cursor-pointer leading-none bg-transparent border-none p-1" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-faint2)">x</button>
+              <button @click="removePlayer(player.id)" class="text-2xl cursor-pointer leading-none bg-transparent border-none p-3 -m-2" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-faint2)" :aria-label="`Retirer ${player.name}`">x</button>
             </div>
           </div>
 
           <!-- Ajout joueur -->
           <div class="flex gap-2">
             <input v-model="newPlayerName" @keyup.enter="addPlayer" placeholder="+ ajouter un joueur..."
+              autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="done"
               class="flex-1 bg-transparent border-none py-2 px-0 outline-none rounded-none"
               style="color: var(--chalk-cream); font-family: var(--font-hand); font-weight: 600; font-size: 24px; -webkit-appearance: none" />
             <button @click="addPlayer" class="chalk-btn" style="color: var(--chalk-green)">noter</button>
@@ -74,12 +78,12 @@
           <span class="text-[26px] xl:text-[30px] mb-3 hidden xl:block" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
             ...et on joue à quoi ce soir ?</span>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          <div class="grid grid-cols-2 xl:grid-cols-3 gap-2.5 xl:gap-3">
             <button v-for="game in games" :key="game.id"
               :disabled="!game.component"
               @click="game.component && (selectedGame = game.id)"
               :class="[
-                'game-tile text-left rounded-[14px] p-4 transition-all duration-300 relative flex flex-col gap-2',
+                'game-tile text-left rounded-[14px] p-3 xl:p-4 transition-all duration-300 relative flex flex-col gap-1.5 xl:gap-2',
                 selectedGame === game.id
                   ? 'border-2 border-solid'
                   : 'border-2 border-dashed',
@@ -91,10 +95,12 @@
               }"
 >
 
-              <div class="chalk-target w-8 h-8" :style="{ color: selectedGame === game.id ? 'var(--chalk-gold)' : 'var(--chalk-cream)' }"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="currentColor" opacity=".25"/><circle cx="20" cy="20" r="13" fill="var(--chalk-bg, #142019)"/><circle cx="20" cy="20" r="8" fill="currentColor" opacity=".25"/><circle cx="20" cy="20" r="3" fill="currentColor"/></svg></div>
+              <div class="flex items-center gap-2 xl:flex-col xl:items-start xl:gap-2">
+                <div class="chalk-target w-6 h-6 xl:w-8 xl:h-8" :style="{ color: selectedGame === game.id ? 'var(--chalk-gold)' : 'var(--chalk-cream)' }"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="currentColor" opacity=".25"/><circle cx="20" cy="20" r="13" fill="var(--chalk-bg, #142019)"/><circle cx="20" cy="20" r="8" fill="currentColor" opacity=".25"/><circle cx="20" cy="20" r="3" fill="currentColor"/></svg></div>
+                <div class="tracking-wide text-base xl:text-xl leading-tight" style="font-family: var(--font-display); color: var(--chalk-cream)">{{ game.name }}</div>
+              </div>
 
-              <div class="tracking-wide text-lg xl:text-xl" style="font-family: var(--font-display); color: var(--chalk-cream)">{{ game.name }}</div>
-              <div class="text-[20px] xl:text-[22px] leading-snug" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
+              <div class="text-[16px] xl:text-[22px] leading-snug" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
                 {{ game.component ? game.short : 'bientôt dispo' }}</div>
 
               <span v-if="selectedGame === game.id" class="absolute -top-3 right-3 px-2.5 py-0.5 rounded-full text-[13px]"
@@ -102,10 +108,10 @@
             </button>
           </div>
 
-          <!-- Barre de lancement -->
-          <div class="mt-auto flex items-center justify-between pt-4 flex-shrink-0 gap-3">
+          <!-- Barre de lancement (sticky sur mobile : le CTA reste sous le pouce) -->
+          <div class="launch-bar mt-auto flex items-center justify-between flex-shrink-0 gap-3">
             <span class="text-base xl:text-[22px] leading-tight" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-              {{ selectedGameName }} · {{ players.length }} joueurs →</span>
+              {{ selectedGameName }} · {{ players.length }} joueur{{ players.length > 1 ? 's' : '' }} →</span>
             <button @click="launchSelectedGame" :disabled="players.length < 2"
               class="chalk-btn-big disabled:opacity-40 text-xl xl:text-[30px] whitespace-nowrap">Lancer la partie</button>
           </div>
@@ -123,7 +129,7 @@
 
     <!-- Composant de jeu -->
     <div v-else class="relative flex-1 xl:overflow-hidden z-10">
-      <component :is="currentComponent" :players="players" />
+      <component :is="currentComponent" :players="players" @exit="currentComponent = null" @login="showAuthModal = true" />
     </div>
 
     <!-- Modal de connexion -->
@@ -148,6 +154,7 @@
 
         <div v-else class="space-y-4">
           <input v-model="authEmail" @keyup.enter="sendMagicLink" type="email" placeholder="ton adresse email"
+            autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="email" enterkeyhint="send"
             class="w-full bg-transparent py-3 px-2 text-base outline-none border-none rounded-none"
             style="border-bottom: 2px solid var(--chalk-line); color: var(--chalk-cream); font-family: var(--font-ui); -webkit-appearance: none" />
 
@@ -271,6 +278,19 @@ export default {
     selectedGameName() {
       const game = this.games.find(g => g.id === this.selectedGame);
       return game ? game.name : 'choisis un jeu';
+    }
+  },
+  watch: {
+    // Each screen swap reuses the same scroll containers: reset them so the new
+    // screen starts at the top (a leftover offset also misroutes the first tap).
+    currentComponent() {
+      this.$nextTick(() => {
+        if (this.$el && this.$el.scrollTo) this.$el.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        const app = document.getElementById('app');
+        if (app) app.scrollTop = 0;
+      });
     }
   },
   mounted() {
@@ -462,9 +482,23 @@ export default {
 @media (min-width: 1280px) {
   .home-body { grid-template-columns: 330px 1fr; }
   .home-sidebar { border-right: 2px dashed var(--chalk-line); }
+  .launch-bar { padding-top: 16px; }
 }
 @media (max-width: 1279px) {
   .home-sidebar { border-bottom: 2px dashed var(--chalk-line); padding-bottom: 16px; }
+  /* CTA collé en bas de l'écran pendant le scroll des tuiles.
+     Le fond s'étend à travers la safe area pour ne pas laisser
+     les tuiles apparaître sous la barre (home indicator). */
+  .launch-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    margin-left: -20px;
+    margin-right: -20px;
+    margin-bottom: calc(0px - env(safe-area-inset-bottom));
+    padding: 14px 20px calc(12px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, #16241f 78%, rgba(22,36,31,0) 100%);
+  }
 }
 
 .chalk-btn-big {

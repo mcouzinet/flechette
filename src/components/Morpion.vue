@@ -8,7 +8,7 @@
       title="MORPION"
       subtitle="aligne 3 cases pour gagner"
       :is-fullscreen="isFullscreen"
-      @back="$parent.currentComponent = null"
+      @back="$emit('exit')"
       @show-rules="showRulesModal = true"
       @toggle-fullscreen="toggleFullscreen"
       @confirm-reset="confirmReset" />
@@ -121,7 +121,7 @@
         <div v-if="isDraw" class="rounded-[14px] p-5 text-center" style="border: 2px dashed var(--chalk-line); background: rgba(241,230,203,0.03)">
           <div class="text-[36px] mb-3 opacity-60">&#9876;</div>
           <h3 class="text-[24px] mb-2" style="font-family: var(--font-display); color: var(--chalk-gold)">MATCH NUL !</h3>
-          <p style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">Aucun joueur n'a reussi a aligner 3 cases.</p>
+          <p style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">Aucun joueur n'a réussi à aligner 3 cases.</p>
         </div>
       </section>
 
@@ -167,9 +167,9 @@
       :show-reset="showResetModal"
       :show-winner="showWinnerModal"
       rules-title="RÈGLES DU MORPION"
-      reset-message="Remettre a zero la manche ?<br><span style=&quot;color: var(--chalk-red)&quot;>Le score sera conserve.</span>"
+      reset-message="Remettre à zéro la manche ?<br><span style=&quot;color: var(--chalk-red)&quot;>Le score sera conservé.</span>"
       :winner-name="winner?.name"
-      :winner-subtitle="isDraw ? 'Match nul !' : 'a aligne 3 cases !'"
+      :winner-subtitle="isDraw ? 'Match nul !' : 'a aligné 3 cases !'"
       @close-rules="showRulesModal = false"
       @close-reset="showResetModal = false"
       @confirm-reset="resetBoard"
@@ -259,6 +259,7 @@ export default {
   name: "Morpion",
   components: { GameHeader, GameModals, HistoryPanel },
   mixins: [fullscreenMixin, keyboardUndoMixin],
+  emits: ['exit'],
   props: {
     players: {
       type: Array,

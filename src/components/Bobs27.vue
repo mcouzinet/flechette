@@ -8,7 +8,7 @@
       title="BOB'S 27"
       subtitle="doubles 1 &rarr; 20 + bulle"
       :is-fullscreen="isFullscreen"
-      @back="$parent.currentComponent = null"
+      @back="$emit('exit')"
       @show-rules="showRulesModal = true"
       @toggle-fullscreen="toggleFullscreen"
       @confirm-reset="confirmReset" />
@@ -248,6 +248,7 @@ export default {
   name: "Bobs27",
   components: { GameHeader, GameModals, HistoryPanel },
   mixins: [fullscreenMixin, keyboardUndoMixin],
+  emits: ['exit'],
   props: {
     players: {
       type: Array,

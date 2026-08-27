@@ -18,9 +18,9 @@
     <div class="chalk-grain rounded-2xl p-8 border-2 border-dashed max-w-md mx-4"
       style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-line)">
       <h3 class="text-2xl text-center mb-4" style="font-family: var(--font-display); color: var(--chalk-red)">CONFIRMER LE RESET</h3>
-      <p class="text-center mb-6" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-        {{ resetMessage }}
-      </p>
+      <!-- resetMessage is app-authored copy (may contain markup), never user input -->
+      <p class="text-center mb-6" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)"
+        v-html="resetMessage"></p>
       <div class="flex gap-3 justify-center">
         <button @click="$emit('close-reset')" class="chalk-btn-ghost">Annuler</button>
         <button @click="$emit('confirm-reset')" class="chalk-btn-red">Reset</button>
@@ -63,9 +63,9 @@ export default {
     showReset: { type: Boolean, default: false },
     showWinner: { type: Boolean, default: false },
     rulesTitle: { type: String, default: 'REGLES' },
-    resetMessage: { type: String, default: 'Remettre a zero la partie ?<br><span style="color: var(--chalk-red)">Cette action est irreversible.</span>' },
+    resetMessage: { type: String, default: 'Remettre à zéro la partie ?<br><span style="color: var(--chalk-red)">Cette action est irréversible.</span>' },
     winnerName: { type: String, default: '' },
-    winnerSubtitle: { type: String, default: 'a remporte la partie !' }
+    winnerSubtitle: { type: String, default: 'a remporté la partie !' }
   },
   emits: ['close-rules', 'close-reset', 'confirm-reset', 'close-winner', 'new-game'],
   watch: {

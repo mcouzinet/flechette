@@ -6,7 +6,7 @@
 
     <!-- Header -->
     <header class="flex flex-wrap items-center justify-between gap-3 px-5 pt-3 pb-2 relative" style="border-bottom: 2px dashed var(--chalk-line); margin: 9px 9px 0">
-      <button @click="$parent.currentComponent = null" class="chalk-btn-ghost text-base xl:text-[21px]">&#8249; Retour</button>
+      <button @click="$emit('exit')" class="chalk-btn-ghost text-base xl:text-[21px]">&#8249; Retour</button>
       <span class="text-xl xl:text-[28px]" style="font-family: var(--font-display); letter-spacing: 0.5px">HISTORIQUE DES PARTIES</span>
       <button
         @click="loadResults"
@@ -24,6 +24,7 @@
         <div class="text-6xl mb-4" style="opacity: 0.15">&#128274;</div>
         <div class="text-lg" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">Connecte-toi pour voir ton historique</div>
         <div class="text-sm mt-2" style="font-family: var(--font-hand); color: var(--chalk-faint2)">Tes scores sont liés à ton compte</div>
+        <button @click="$emit('login')" class="chalk-btn mt-6" style="color: var(--chalk-gold)">Se connecter</button>
       </div>
 
       <!-- Filtres -->
@@ -123,6 +124,7 @@ import { onAuthStateChanged } from 'firebase/auth'
 
 export default {
   name: "Resultats",
+  emits: ['exit', 'login'],
   data() {
     return {
       results: [],
