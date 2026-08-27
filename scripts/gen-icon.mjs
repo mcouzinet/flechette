@@ -1,6 +1,9 @@
-// Generates the Stonk app-icon sources from the "S." mark (Anton glyph → vector
-// path via opentype.js, so no font resolution is needed at raster time) and
-// rasterises them with sharp. Then run `npx capacitor-assets generate`.
+// Generates every Stonk brand asset from the "S." mark (Anton glyph → vector
+// path via opentype.js, so no font is needed at raster time) with sharp:
+//   assets/icon-only|icon-foreground|icon-background.png  (→ capacitor-assets)
+//   assets/splash|splash-dark.png                          (matching launch screen)
+//   public/favicon.svg|apple-touch-icon.png|favicon-96x96.png|favicon.ico
+// Then run `npx capacitor-assets generate`.
 import opentype from 'opentype.js'
 import sharp from 'sharp'
 import { readFileSync, writeFileSync } from 'node:fs'
@@ -12,64 +15,72 @@ const C = { bgTop: '#22342c', bg: '#15211b', cream: '#f1e6cb', gold: '#ecc66a' }
 const _buf = readFileSync(join(root, 'node_modules/@fontsource/anton/files/anton-latin-400-normal.woff'))
 const font = opentype.parse(_buf.buffer.slice(_buf.byteOffset, _buf.byteOffset + _buf.byteLength))
 
-const SIZE = 1024
+const bgRect = (n) => `<defs><radialGradient id="g" cx="50%" cy="-4%" r="120%">
+    <stop offset="0%" stop-color="${C.bgTop}"/><stop offset="68%" stop-color="${C.bg}"/>
+  </radialGradient></defs><rect width="${n}" height="${n}" fill="url(#g)"/>`
 
-// Build the "S ." mark centred in a SIZE canvas. `visH` = target S height (px),
-// `bg` = draw the gradient background, `letter`/`dotColor` overridable.
-function markSVG({ visH = 540, bg = true, letter = C.cream, dotColor = C.gold } = {}) {
-  // font size that makes the glyph exactly visH tall
+// Geometry of the "S ." mark: S of height visH, centred at cyFrac, gold dot after it.
+function markGeom(canvas, visH, cyFrac) {
   const probe = font.getPath('S', 0, 0, 1000).getBoundingBox()
   const fontSize = 1000 * visH / (probe.y2 - probe.y1)
   const path = font.getPath('S', 0, 0, fontSize)
   const bb = path.getBoundingBox()
-  const gW = bb.x2 - bb.x1
-  const gH = bb.y2 - bb.y1
+  const gW = bb.x2 - bb.x1, gH = bb.y2 - bb.y1
+  const dotD = visH * 0.24, gap = visH * 0.05
+  const gx = (canvas - (gW + gap + dotD)) / 2
+  const top = canvas * cyFrac - gH / 2
+  return {
+    svg: `<g transform="translate(${(gx - bb.x1).toFixed(2)},${(top - bb.y1).toFixed(2)})"><path d="${path.toPathData(2)}" fill="${C.cream}"/></g>
+      <circle cx="${(gx + gW + gap + dotD / 2).toFixed(2)}" cy="${(top + gH - dotD / 2 - visH * 0.02).toFixed(2)}" r="${(dotD / 2).toFixed(2)}" fill="${C.gold}"/>`,
+    bottom: top + gH,
+  }
+}
 
-  const dotD = visH * 0.24
-  const gap = visH * 0.05
-  const groupW = gW + gap + dotD
-  const gx = (SIZE - groupW) / 2
-  const top = SIZE * 0.475 - gH / 2
+// Word "STONK" as a centred path, its top at y=topY.
+function wordSVG(canvas, fontSize, topY) {
+  const p = font.getPath('STONK', 0, 0, fontSize)
+  const b = p.getBoundingBox()
+  const x = (canvas - (b.x2 - b.x1)) / 2 - b.x1
+  return `<g transform="translate(${x.toFixed(2)},${(topY - b.y1).toFixed(2)})"><path d="${p.toPathData(2)}" fill="${C.cream}" opacity="0.9"/></g>`
+}
 
-  const tx = gx - bb.x1
-  const ty = top - bb.y1
-  const baseline = top + gH
-  const dotCx = gx + gW + gap + dotD / 2
-  const dotCy = baseline - dotD / 2 - visH * 0.02
+function iconSVG({ canvas = 1024, visH = 540, bg = true } = {}) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas}" height="${canvas}">${bg ? bgRect(canvas) : ''}${markGeom(canvas, visH, 0.475).svg}</svg>`
+}
 
-  const d = path.toPathData(2)
-  const bgLayer = bg
-    ? `<defs><radialGradient id="g" cx="50%" cy="-4%" r="120%">
-         <stop offset="0%" stop-color="${C.bgTop}"/>
-         <stop offset="68%" stop-color="${C.bg}"/>
-       </radialGradient></defs>
-       <rect width="${SIZE}" height="${SIZE}" fill="url(#g)"/>`
-    : ''
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">
-    ${bgLayer}
-    <g transform="translate(${tx.toFixed(2)},${ty.toFixed(2)})"><path d="${d}" fill="${letter}"/></g>
-    <circle cx="${dotCx.toFixed(2)}" cy="${dotCy.toFixed(2)}" r="${(dotD / 2).toFixed(2)}" fill="${dotColor}"/>
-  </svg>`
+function splashSVG() {
+  const n = 2732
+  const m = markGeom(n, 660, 0.42)
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${n}" height="${n}">${bgRect(n)}${m.svg}${wordSVG(n, 190, m.bottom + n * 0.05)}</svg>`
 }
 
 const png = (svg) => sharp(Buffer.from(svg)).png()
 
-// icon-only: full-bleed square (iOS masks the corners itself)
-await png(markSVG({ visH: 540, bg: true })).toFile(join(root, 'assets/icon-only.png'))
-// android adaptive: foreground = mark inside the ~66% safe zone, transparent bg
-await png(markSVG({ visH: 380, bg: false })).toFile(join(root, 'assets/icon-foreground.png'))
-// android adaptive: background = flat gradient, no mark
-await png(`<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}">
-  <defs><radialGradient id="g" cx="50%" cy="-4%" r="120%">
-    <stop offset="0%" stop-color="${C.bgTop}"/><stop offset="68%" stop-color="${C.bg}"/>
-  </radialGradient></defs><rect width="${SIZE}" height="${SIZE}" fill="url(#g)"/></svg>`)
-  .toFile(join(root, 'assets/icon-background.png'))
+function pngToIco(pngBuffer, size) {
+  const h = Buffer.alloc(6); h.writeUInt16LE(1, 2); h.writeUInt16LE(1, 4)
+  const e = Buffer.alloc(16)
+  e.writeUInt8(size >= 256 ? 0 : size, 0); e.writeUInt8(size >= 256 ? 0 : size, 1)
+  e.writeUInt16LE(1, 4); e.writeUInt16LE(32, 6)
+  e.writeUInt32LE(pngBuffer.length, 8); e.writeUInt32LE(22, 12)
+  return Buffer.concat([h, e, pngBuffer])
+}
 
-// web favicons + apple-touch (same full-bleed mark)
-const iconSvg = markSVG({ visH: 540, bg: true })
-writeFileSync(join(root, 'public/favicon.svg'), iconSvg)
-await png(iconSvg).resize(180, 180).toFile(join(root, 'public/apple-touch-icon.png'))
-await png(iconSvg).resize(96, 96).toFile(join(root, 'public/favicon-96x96.png'))
+// ---- app icon sources (→ capacitor-assets) ----
+await png(iconSVG({ visH: 540, bg: true })).toFile(join(root, 'assets/icon-only.png'))
+await png(iconSVG({ visH: 380, bg: false })).toFile(join(root, 'assets/icon-foreground.png'))
+await png(`<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024">${bgRect(1024)}</svg>`).toFile(join(root, 'assets/icon-background.png'))
 
-console.log('✓ assets/{icon-only,icon-foreground,icon-background}.png + public/{favicon.svg,apple-touch-icon.png,favicon-96x96.png}')
+// ---- matching splash (light + dark identical: the app is dark) ----
+const splash = splashSVG()
+await png(splash).toFile(join(root, 'assets/splash.png'))
+await png(splash).toFile(join(root, 'assets/splash-dark.png'))
+
+// ---- web favicons ----
+const favSvg = iconSVG({ visH: 540, bg: true })
+writeFileSync(join(root, 'public/favicon.svg'), favSvg)
+await png(favSvg).resize(180, 180).toFile(join(root, 'public/apple-touch-icon.png'))
+await png(favSvg).resize(96, 96).toFile(join(root, 'public/favicon-96x96.png'))
+const ico = await png(favSvg).resize(48, 48).toBuffer()
+writeFileSync(join(root, 'public/favicon.ico'), pngToIco(ico, 48))
+
+console.log('✓ icons + splash + favicons regenerated')
