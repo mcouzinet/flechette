@@ -156,19 +156,23 @@ export default {
 <style scoped>
 .lb {
   height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;
-  padding: 14px 18px calc(20px + env(safe-area-inset-bottom));
+  padding: 14px 18px calc(96px + env(safe-area-inset-bottom));
   color: var(--chalk-cream); font-family: var(--font-ui);
   background: radial-gradient(130% 90% at 50% -10%, #20322b, var(--chalk-bg) 72%);
 }
 .lb-top { display: flex; align-items: center; justify-content: space-between; }
 .lb-title { font-family: var(--font-display); font-size: 22px; letter-spacing: 1px; }
+/* Plancher tactile : tous ces controles etaient sous 44 px, les boutons
+   +/- de la liste des joueurs descendaient meme a 24x33. */
 .lb-ghost {
+  min-height: 44px;
   border: 2px solid var(--chalk-line); border-radius: 12px; padding: 6px 14px; background: transparent;
   color: var(--chalk-faint); font-family: var(--font-hand); font-weight: 600; font-size: 17px; cursor: pointer;
 }
 .lb-intro { font-family: var(--font-hand); font-size: 20px; color: var(--chalk-gold); margin: -4px 0 0; }
 .lb-tabs { display: flex; gap: 10px; }
 .lb-tab {
+  min-height: 44px;
   flex: 1; padding: 10px 0; border: 2px solid var(--chalk-line); border-radius: 12px; background: transparent;
   color: var(--chalk-faint); font-family: var(--font-hand); font-weight: 600; font-size: 20px; cursor: pointer;
 }
@@ -182,8 +186,9 @@ export default {
 .lb-game.sel { border-style: solid; border-color: var(--chalk-gold); background: rgba(236, 198, 106, 0.1); }
 .lb-game-name { display: block; font-family: var(--font-display); font-size: 18px; color: var(--chalk-cream); }
 .lb-game-short { display: block; font-family: var(--font-hand); font-size: 16px; color: var(--chalk-faint); margin-top: 2px; }
-.lb-opt { display: flex; gap: 8px; }
+.lb-opt { display: flex; flex-wrap: wrap; gap: 8px; }
 .lb-pill {
+  min-height: 44px;
   padding: 6px 18px; border: 2px solid var(--chalk-line); border-radius: 20px; background: transparent;
   color: var(--chalk-faint); font-family: var(--font-display); font-size: 16px; cursor: pointer;
 }
@@ -192,12 +197,14 @@ export default {
 .lb-prow { display: flex; align-items: center; gap: 10px; border-bottom: 1.5px dashed var(--chalk-line); padding: 4px 0; }
 .lb-pnum { font-family: var(--font-hand); font-size: 20px; color: var(--chalk-faint2); width: 22px; }
 .lb-pinput {
+  min-height: 44px;
   flex: 1; background: transparent; border: none;  color: var(--chalk-cream);
   font-family: var(--font-hand); font-weight: 600; font-size: 24px; -webkit-appearance: none;
 }
 .lb-joinname { border-bottom: 1.5px dashed var(--chalk-line); }
-.lb-px { background: transparent; border: none; color: var(--chalk-faint2); font-size: 22px; cursor: pointer; padding: 0 6px; }
+.lb-px { display: grid; place-items: center; min-width: 44px; min-height: 44px; background: transparent; border: none; color: var(--chalk-faint); font-size: 22px; cursor: pointer; }
 .lb-add {
+  min-height: 44px;
   align-self: flex-start; margin-top: 4px; border: 2px solid var(--chalk-green); border-radius: 12px; padding: 4px 16px;
   background: transparent; color: var(--chalk-green); font-family: var(--font-hand); font-size: 18px; cursor: pointer;
 }
@@ -206,8 +213,18 @@ export default {
   border: 2px solid var(--chalk-line); border-radius: 14px; padding: 14px 0; color: var(--chalk-gold);
   font-family: var(--font-display); font-size: 32px;  -webkit-appearance: none; text-transform: uppercase;
 }
+/* « Créer la partie » était à 446 px sous la ligne de flottaison, alors que
+   l'accueil a une barre collante pour la même action. Barre fixe : le sticky
+   ne prend pas ici, le bouton est le dernier enfant d'un conteneur qui
+   s'arrête exactement sur lui. */
 .lb-go {
-  margin-top: 6px; border: 2px solid var(--chalk-red); border-radius: 16px; padding: 12px 0; background: transparent;
+  position: fixed;
+  left: 18px;
+  right: 18px;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  z-index: 30;
+  border: 2px solid var(--chalk-red); border-radius: 16px; padding: 12px 0;
+  background: #1a2823;
   color: var(--chalk-red); font-family: var(--font-hand); font-weight: 600; font-size: 26px; cursor: pointer;
 }
 .lb-go:disabled { opacity: 0.4; }

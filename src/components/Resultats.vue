@@ -223,7 +223,9 @@ export default {
 .chalk-btn-green:disabled {
   opacity: 0.5; cursor: not-allowed;
 }
+/* Plancher tactile. */
 .chalk-filter {
+  min-height: 44px;
   font-family: var(--font-hand); font-weight: 600; font-size: 19px;
   color: var(--chalk-faint); background: transparent;
   border: 2px dashed var(--chalk-line); border-radius: 12px;
@@ -235,6 +237,7 @@ export default {
   color: var(--chalk-cream);
 }
 .chalk-filter-active {
+  min-height: 44px;
   font-family: var(--font-hand); font-weight: 600; font-size: 19px;
   color: var(--chalk-gold); background: transparent;
   border: 2px solid var(--chalk-gold); border-radius: 12px;
