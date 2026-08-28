@@ -10,7 +10,7 @@
     <div class="statusbar-shim" aria-hidden="true"></div>
 
     <!-- Page d'accueil -->
-    <div v-if="!currentComponent" class="flex-1 flex flex-col xl:overflow-hidden relative z-10">
+    <div v-if="screen === 'home'" class="flex-1 flex flex-col xl:overflow-hidden relative z-10">
 
       <!-- Header -->
       <header class="flex items-start justify-between px-5 xl:px-9 pt-6 xl:pt-7 pb-4 flex-shrink-0">
@@ -31,15 +31,6 @@
           </div>
         </div>
       </header>
-
-      <!-- Jouer à distance -->
-      <button @click="currentComponent = 'RemoteMode'" class="remote-cta">
-        <span>
-          <span class="remote-cta-title">🎯 Jouer à distance</span>
-          <span class="remote-cta-sub">une partie, deux téléphones — chacun note</span>
-        </span>
-        <span class="remote-cta-arrow">→</span>
-      </button>
 
       <!-- Corps : joueurs + jeux -->
       <div class="flex-1 flex flex-col xl:grid xl:gap-9 xl:overflow-hidden px-5 xl:px-9 pb-5 home-body">
@@ -112,14 +103,46 @@
 
           </div>
 
+          <!-- Mode de jeu. Le distant est une OPTION de cette partie, pas un
+               deuxieme parcours : meme feuille, meme jeu, meme lancement — seule
+               la saisie se repartit sur les telephones. -->
+          <div class="mode-block flex-shrink-0">
+            <div class="mode-title">MODE DE JEU</div>
+
+            <label class="mode-opt" :class="{ off: !remoteAvailable }">
+              <input type="checkbox" class="mode-box" v-model="remotePlay" :disabled="!remoteAvailable" />
+              <span class="mode-text">
+                <span class="mode-label">Jouer à distance</span>
+                <span class="mode-sub">Chaque joueur utilise son téléphone pour saisir son score pendant la partie.</span>
+              </span>
+            </label>
+
+            <!-- Le seul reglage que le distant doit figer avant que les autres
+                 rejoignent : en local, le 301 se choisit encore en cours de partie. -->
+            <div v-if="remotePlay && selectedGame === '301'" class="mode-config">
+              <span class="mode-config-label">Score de départ</span>
+              <div class="mode-pills">
+                <button v-for="s in startScores" :key="s" type="button"
+                  :class="['mode-pill', remoteStart === s && 'on']" @click="remoteStart = s">{{ s }}</button>
+              </div>
+            </div>
+
+            <p v-if="remoteError" class="mode-err">{{ remoteError }}</p>
+
+            <button type="button" class="mode-join" @click="openJoin">
+              On t'a donné un code ? <span class="mode-join-link">rejoindre une partie</span>
+            </button>
+          </div>
+
           <!-- Barre de lancement : hors de la zone qui defile, pour ne jamais
                recouvrir la derniere tuile. -->
           <div class="launch-bar flex items-center justify-between flex-shrink-0 gap-3">
             <span class="text-base xl:text-[22px] leading-tight" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
               <template v-if="players.length < 2">Il faut au moins deux joueurs sur la feuille.</template>
-              <template v-else>{{ selectedGameName }} · {{ players.length }} joueur{{ players.length > 1 ? 's' : '' }} →</template></span>
-            <button @click="launchSelectedGame" :disabled="players.length < 2"
-              class="chalk-btn-big disabled:opacity-40 text-xl xl:text-[30px] whitespace-nowrap">Lancer la partie</button>
+              <template v-else-if="remoteBlock">{{ remoteBlock }}</template>
+              <template v-else>{{ selectedGameName }} · {{ players.length }} joueur{{ players.length > 1 ? 's' : '' }}<template v-if="remotePlay"> · à distance</template> →</template></span>
+            <button @click="launchSelectedGame" :disabled="!canLaunch || launching"
+              class="chalk-btn-big disabled:opacity-40 text-xl xl:text-[30px] whitespace-nowrap">{{ launching ? 'Ouverture…' : 'Lancer la partie' }}</button>
           </div>
         </div>
       </div>
@@ -131,6 +154,16 @@
         <button v-if="!user" @click="openAuth" class="chalk-btn" style="color: var(--chalk-faint)">connexion</button>
         <span v-else class="text-lg" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-gold)">{{ user.email }}</span>
       </div>
+    </div>
+
+    <!-- Meme partie, saisie repartie : le distant n'a pas d'ecran d'accueil a lui -->
+    <div v-else-if="screen === 'remote-game'" class="relative flex-1 xl:overflow-hidden z-10">
+      <RemoteGame :code="remoteCode" :invite="remoteInvite" @home="exitRemote" />
+    </div>
+
+    <!-- On a recu un lien ou un code : on rejoint la partie de quelqu'un d'autre -->
+    <div v-else-if="screen === 'remote-join'" class="relative flex-1 xl:overflow-hidden z-10">
+      <RemoteJoin :code="joinCode" @joined="onJoined" @home="exitRemote" />
     </div>
 
     <!-- Composant de jeu -->
@@ -233,7 +266,8 @@ export default {
     Baseball: game(() => import('./components/Baseball.vue')),
     CountUp: game(() => import('./components/CountUp.vue')),
     Resultats: game(() => import('./components/Resultats.vue')),
-    RemoteMode: game(() => import('./remote/RemoteMode.vue')),
+    RemoteGame: game(() => import('./remote/RemoteGame.vue')),
+    RemoteJoin: game(() => import('./remote/RemoteJoin.vue')),
   },
   data() {
     return {
@@ -244,55 +278,66 @@ export default {
       authLoading: false,
       isStandalone: false,
       selectedGame: 'cricket',
+      // « Jouer a distance » est une option de la partie en cours de creation.
+      remotePlay: false,
+      remoteStart: 301,
+      startScores: [101, 301, 401, 501, 701, 1001],
+      remoteMeta: null, // metas des jeux distants, chargees a la premiere coche
+      remoteView: null, // null | 'game' | 'join'
+      remoteCode: '',
+      remoteInvite: false,
+      joinCode: '',
+      launching: false,
+      remoteError: '',
       playerColors: ['var(--chalk-red)', 'var(--chalk-green)', 'var(--chalk-gold)', 'var(--chalk-blue)', 'var(--chalk-pink)', 'var(--chalk-orange)', 'var(--chalk-purple)', 'var(--chalk-cyan)'],
       games: [
         {
-          id: 'cricket', name: 'Cricket', short: 'Ferme 20→15 + bull',
+          id: 'cricket', name: 'Cricket', remoteId: 'cricket', short: 'Ferme 20→15 + bull',
           description: 'Ferme les zones 20, 19, 18, 17, 16, 15 et la bulle avant l\'adversaire.',
           component: 'Cricket'
         },
         {
-          id: '301', name: '301 · 501', short: 'Tombe à zéro pile',
+          id: '301', name: '301 · 501', remoteId: 'x01', short: 'Tombe à zéro pile',
           description: 'Pars de 301 ou 501 et atteins exactement zéro pour gagner.',
           component: 'Game301'
         },
         {
-          id: 'shangai', name: 'Shanghai', short: 'Manche par manche',
+          id: 'shangai', name: 'Shanghai', remoteId: 'shanghai', short: 'Manche par manche',
           description: '20 manches, une cible par manche. Le Shanghai met fin à la partie.',
           component: 'Shanghai'
         },
         {
-          id: 'horloge', name: 'Autour de l\'horloge', short: '1 → 20 dans l\'ordre',
+          id: 'horloge', name: 'Autour de l\'horloge', remoteId: 'horloge', short: '1 → 20 dans l\'ordre',
           description: 'Touche les numéros de 1 à 20 puis la bulle. Le plus rapide gagne.',
           component: 'Horloge'
         },
         {
-          id: 'killer', name: 'Killer', short: 'Élimine les autres',
+          id: 'killer', name: 'Killer', remoteId: 'killer', short: 'Élimine les autres',
           description: 'Deviens killer puis élimine les adversaires en touchant leur double.',
           component: 'Killer'
         },
         {
-          id: 'morpion', name: 'Morpion', short: 'Tic-tac-toe fléché',
+          id: 'morpion', name: 'Morpion', remoteId: 'morpion', short: 'Tic-tac-toe fléché',
           description: 'Le morpion classique : aligne trois cases en touchant les zones.',
           component: 'Morpion'
         },
         {
-          id: 'halveit', name: 'Halve-It', short: 'Divise ou domine',
+          id: 'halveit', name: 'Halve-It', remoteId: 'halveit', short: 'Divise ou domine',
           description: 'Cibles imposées par round. Rater = score divisé par 2.',
           component: 'HalveIt'
         },
         {
-          id: 'bobs27', name: 'Bob\'s 27', short: 'Doubles ou dégage',
+          id: 'bobs27', name: 'Bob\'s 27', remoteId: 'bobs27', short: 'Doubles ou dégage',
           description: 'Départ à 27 pts. Doubles 1→20→bulle. Touché +, raté −.',
           component: 'Bobs27'
         },
         {
-          id: 'baseball', name: 'Baseball', short: '9 manches de runs',
+          id: 'baseball', name: 'Baseball', remoteId: 'baseball', short: '9 manches de runs',
           description: '9 manches. Simple=1, Double=2, Triple=3 runs.',
           component: 'Baseball'
         },
         {
-          id: 'countup', name: 'Count Up', short: '8 rounds, max de points',
+          id: 'countup', name: 'Count Up', remoteId: 'countup', short: '8 rounds, max de points',
           description: '8 rounds de 3 flechettes. Le plus haut score total gagne.',
           component: 'CountUp'
         }
@@ -304,15 +349,63 @@ export default {
     };
   },
   computed: {
+    selectedGameEntry() {
+      return this.games.find(g => g.id === this.selectedGame) || null;
+    },
     selectedGameName() {
-      const game = this.games.find(g => g.id === this.selectedGame);
+      const game = this.selectedGameEntry;
       return game ? game.name : 'choisis un jeu';
+    },
+    // Un seul aiguillage d'ecran : accueil, jeu local, ou la meme partie jouee
+    // a distance. Le distant n'a pas de racine a lui.
+    screen() {
+      if (this.remoteView === 'game') return 'remote-game';
+      if (this.remoteView === 'join') return 'remote-join';
+      return this.currentComponent ? 'local-game' : 'home';
+    },
+    remoteAvailable() {
+      const g = this.selectedGameEntry;
+      return !!(g && g.remoteId);
+    },
+    // Ce qui empeche de lancer CETTE partie a distance (chaine vide = rien).
+    remoteBlock() {
+      if (!this.remotePlay) return '';
+      const g = this.selectedGameEntry;
+      if (!g || !g.remoteId) return `${this.selectedGameName} ne se joue pas encore à distance.`;
+      const meta = this.remoteMeta && this.remoteMeta[g.remoteId];
+      if (meta && meta.maxPlayers && this.players.length > meta.maxPlayers) {
+        return `${g.name} à distance se joue à ${meta.maxPlayers} joueurs — retire des noms de la feuille.`;
+      }
+      return '';
+    },
+    canLaunch() {
+      return this.players.length >= 2 && !this.remoteBlock;
     }
   },
   watch: {
+    // Le distant peut rendre la case inapplicable (jeu sans moteur distant) :
+    // on la decoche plutot que de laisser une option morte cochee.
+    selectedGame() {
+      if (!this.remoteAvailable) this.remotePlay = false;
+      this.remoteError = '';
+    },
+    // Les reducteurs distants sont purs (aucun Firebase) : les charger juste
+    // pour lire min/maxPlayers ne tire pas Firestore sur l'accueil.
+    async remotePlay(on) {
+      this.remoteError = '';
+      if (!on || this.remoteMeta) return;
+      try {
+        const { GAMES } = await import('./remote/games/index.js');
+        const metas = {};
+        for (const id of Object.keys(GAMES)) metas[id] = GAMES[id].meta;
+        this.remoteMeta = metas;
+      } catch (e) {
+        console.error('Chargement des jeux à distance:', e);
+      }
+    },
     // Each screen swap reuses the same scroll containers: reset them so the new
     // screen starts at the top (a leftover offset also misroutes the first tap).
-    currentComponent() {
+    screen() {
       this.$nextTick(() => {
         if (this.$el && this.$el.scrollTo) this.$el.scrollTo(0, 0);
         document.documentElement.scrollTop = 0;
@@ -324,6 +417,12 @@ export default {
   },
   mounted() {
     this.loadPlayersFromStorage();
+    // Un ami a partage le lien de sa partie : on va droit a la jonction.
+    const partie = this.readUrlCode();
+    if (partie) {
+      this.joinCode = partie;
+      this.remoteView = 'join';
+    }
     // L'etat de connexion arrive apres le premier rendu, jamais avant.
     const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 400));
     idle(() => this.initAuth());
@@ -433,9 +532,76 @@ export default {
       loadAuth();
     },
 
-    launchSelectedGame() {
-      const game = this.games.find(g => g.id === this.selectedGame);
-      if (game) this.startGameDirectly(game);
+    // Un seul bouton « Lancer la partie » : la case a cocher decide si les
+    // scores se saisissent ici ou sur les telephones de chacun.
+    async launchSelectedGame() {
+      const game = this.selectedGameEntry;
+      if (!game || !this.canLaunch || this.launching) return;
+      if (!this.remotePlay) {
+        this.startGameDirectly(game);
+        return;
+      }
+      this.launching = true;
+      this.remoteError = '';
+      try {
+        const { createSession } = await import('./remote/session.js');
+        const config = game.remoteId === 'x01' ? { start: this.remoteStart } : {};
+        const code = await createSession({
+          gameId: game.remoteId,
+          config,
+          players: this.players.map(p => ({ id: String(p.id), name: p.name })),
+          hostName: this.players[0].name,
+        });
+        this.openRemoteGame(code, true);
+      } catch (error) {
+        console.error('Ouverture de la partie à distance:', error);
+        this.remoteError = (error && error.message) || "Impossible d'ouvrir la partie à distance.";
+      } finally {
+        this.launching = false;
+      }
+    },
+
+    openRemoteGame(code, invite) {
+      this.remoteCode = code;
+      this.remoteInvite = !!invite;
+      this.remoteView = 'game';
+      this.setUrlCode(code);
+    },
+    openJoin() {
+      this.joinCode = '';
+      this.remoteError = '';
+      this.remoteView = 'join';
+    },
+    onJoined(code) {
+      this.openRemoteGame(code, false);
+    },
+    exitRemote() {
+      this.remoteView = null;
+      this.remoteCode = '';
+      this.joinCode = '';
+      this.remoteInvite = false;
+      this.setUrlCode('');
+    },
+    // Le code vit dans l'URL pendant la partie : recharger l'onglet ou renvoyer
+    // le lien ramene sur la meme partie au lieu de l'accueil.
+    readUrlCode() {
+      try {
+        const raw = new URLSearchParams(window.location.search).get('partie') || '';
+        const code = raw.trim().toUpperCase();
+        return /^[A-Z0-9]{6}$/.test(code) ? code : '';
+      } catch (error) {
+        return '';
+      }
+    },
+    setUrlCode(code) {
+      try {
+        const url = new URL(window.location.href);
+        if (code) url.searchParams.set('partie', code);
+        else url.searchParams.delete('partie');
+        window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+      } catch (error) {
+        /* pas d'URL manipulable (WebView exotique) : sans effet */
+      }
     },
 
     loadPlayersFromStorage() {
@@ -522,7 +688,6 @@ export default {
 
 /* Responsive home layout */
 @media (min-width: 1280px) {
-  .remote-cta { margin-left: 36px; margin-right: 36px; }
   .home-body { grid-template-columns: 330px 1fr; }
   .home-sidebar { border-right: 2px dashed var(--chalk-line); }
   .launch-bar {
@@ -567,14 +732,67 @@ export default {
 /* Hide the desktop-only fullscreen toggle in app/standalone mode (requestFullscreen is a no-op in a native WebView). */
 .is-standalone .btn-fullscreen, .is-native .btn-fullscreen { display: none !important; }
 
-/* "Play remotely" call-to-action on the home screen */
-.remote-cta {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  text-align: left; margin: 4px 20px 22px;
-  border: 2px solid var(--chalk-gold); border-radius: 16px; padding: 14px 18px;
-  background: rgba(236, 198, 106, 0.08); cursor: pointer;
+/* Bloc « mode de jeu » : dernier reglage de la feuille, juste au-dessus de la
+   barre de lancement. Meme langage que le reste — filets pointilles et craie,
+   aucune page ni encart supplementaire. */
+.mode-block {
+  display: flex; flex-direction: column; gap: 8px;
+  margin-top: 12px; padding-top: 12px;
+  border-top: 2px dashed var(--chalk-line);
 }
-.remote-cta-title { display: block; font-family: var(--font-display); font-size: 21px; color: var(--chalk-cream); letter-spacing: 0.5px; }
-.remote-cta-sub { display: block; font-family: var(--font-hand); font-size: 18px; color: var(--chalk-gold); margin-top: 2px; }
-.remote-cta-arrow { font-family: var(--font-display); font-size: 26px; color: var(--chalk-gold); flex: none; }
+.mode-title { font-family: var(--font-display); font-size: 15px; letter-spacing: 1px; color: var(--chalk-faint); }
+.mode-opt { display: flex; align-items: flex-start; gap: 12px; min-height: 44px; padding: 2px 0; cursor: pointer; }
+.mode-opt.off { opacity: 0.4; cursor: not-allowed; }
+/* Vraie case a cocher (pas un bouton de navigation deguise) : l'etat coche
+   reste lisible meme si le ::after n'est pas rendu — la case se remplit d'or. */
+.mode-box {
+  appearance: none; -webkit-appearance: none;
+  width: 26px; height: 26px; flex: none; margin-top: 3px; cursor: pointer;
+  border: 2px solid var(--chalk-faint); border-radius: 7px; background: transparent;
+  display: grid; place-items: center;
+}
+.mode-box::after {
+  content: '\2713'; font-family: var(--font-hand); font-weight: 700; font-size: 20px; line-height: 1;
+  color: var(--chalk-bg); opacity: 0; transform: scale(0.6);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.mode-box:checked { border-color: var(--chalk-gold); background: var(--chalk-gold); }
+.mode-box:checked::after { opacity: 1; transform: scale(1); }
+.mode-box:disabled { cursor: not-allowed; }
+.mode-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.mode-label { font-family: var(--font-hand); font-weight: 600; font-size: 22px; color: var(--chalk-cream); line-height: 1.15; }
+.mode-sub { font-family: var(--font-hand); font-weight: 600; font-size: 17px; color: var(--chalk-faint); line-height: 1.2; }
+.mode-config { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-left: 38px; }
+.mode-config-label { font-family: var(--font-hand); font-weight: 600; font-size: 17px; color: var(--chalk-faint); }
+.mode-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.mode-pill {
+  min-height: 44px; padding: 4px 14px; border: 2px solid var(--chalk-line); border-radius: 20px;
+  background: transparent; color: var(--chalk-faint);
+  font-family: var(--font-display); font-size: 15px; cursor: pointer;
+}
+.mode-pill.on { border-color: var(--chalk-gold); color: var(--chalk-gold); background: rgba(236, 198, 106, 0.1); }
+.mode-err { margin: 0; font-family: var(--font-hand); font-weight: 600; font-size: 17px; color: var(--chalk-red); }
+.mode-join {
+  align-self: flex-start; min-height: 44px; padding: 4px 0; background: transparent; border: none;
+  text-align: left; cursor: pointer;
+  font-family: var(--font-hand); font-weight: 600; font-size: 17px; color: var(--chalk-faint2);
+}
+.mode-join-link { color: var(--chalk-gold); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Les regles de base de .mode-block sont declarees juste au-dessus : a
+   specificite egale c'est l'ordre du fichier qui tranche, donc la variante
+   grand ecran doit venir APRES elles (et non dans le bloc responsive du haut).
+   Sur grand ecran le bloc tient sur une ligne : une case a cocher ne doit pas
+   couter une rangee de tuiles. Les cibles restent a 44 px. */
+@media (min-width: 1280px) {
+  .mode-block { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px 20px; margin-top: 10px; padding-top: 10px; }
+  .mode-title { flex: none; font-size: 17px; }
+  .mode-opt { flex: 1 1 340px; align-items: center; }
+  .mode-box { margin-top: 0; }
+  .mode-label { font-size: 24px; }
+  .mode-sub { font-size: 19px; }
+  .mode-config { flex-basis: 100%; padding-left: 0; }
+  .mode-err { flex-basis: 100%; }
+  .mode-join { margin-left: auto; font-size: 19px; }
+}
 </style>

@@ -57,10 +57,17 @@
   <transition name="rg-band">
     <div v-if="state && !online" class="rg-offline">⚡ Hors ligne — reconnexion…</div>
   </transition>
+
+  <RemoteInvite v-if="showInvite && session && game"
+    :code="code"
+    :game-name="game.meta.name"
+    :player-count="session.players.length"
+    @close="showInvite = false" />
 </template>
 
 <script>
 import RemoteGameShell from './RemoteGameShell.vue'
+import RemoteInvite from './RemoteInvite.vue'
 import X01Board from './boards/X01Board.vue'
 import CountUpBoard from './boards/CountUpBoard.vue'
 import ShanghaiBoard from './boards/ShanghaiBoard.vue'
@@ -134,11 +141,16 @@ function describeDart(dart, state) {
 
 export default {
   name: 'RemoteGame',
-  components: { RemoteGameShell },
-  props: { code: { type: String, required: true } },
+  components: { RemoteGameShell, RemoteInvite },
+  props: {
+    code: { type: String, required: true },
+    // Vrai quand C'EST NOUS qui venons de creer la partie : on ouvre alors le
+    // panneau d'invitation, seul endroit ou le code et le lien sont donnes.
+    invite: { type: Boolean, default: false },
+  },
   emits: ['home'],
   data() {
-    return { session: null, error: '', busy: false, connected: false, unsub: null, pendingDart: null, pendingFromCount: -1, toast: '', toastTimer: null, online: typeof navigator !== 'undefined' ? navigator.onLine : true }
+    return { showInvite: this.invite, session: null, error: '', busy: false, connected: false, unsub: null, pendingDart: null, pendingFromCount: -1, toast: '', toastTimer: null, online: typeof navigator !== 'undefined' ? navigator.onLine : true }
   },
   computed: {
     game() { return this.session ? getGame(this.session.gameId) : null },
@@ -268,13 +280,9 @@ export default {
       try { await resetGame(this.code) } catch (e) { console.error(e) } finally { this.busy = false }
     },
     quit() { this.$emit('home') },
-    async share() {
-      const text = `Rejoins ma partie de fléchettes Stonk avec le code ${this.code}`
-      try {
-        if (navigator.share) await navigator.share({ title: 'Stonk', text })
-        else if (navigator.clipboard) await navigator.clipboard.writeText(this.code)
-      } catch (_) { /* ignore */ }
-    },
+    // La pastille du code rouvre le panneau d'invitation : le lien y est lisible
+    // et copiable, la ou un partage a l'aveugle ne montrait rien.
+    share() { this.showInvite = true },
   },
 }
 </script>

@@ -92,6 +92,15 @@ export async function joinSession(code, name = 'Invité') {
   return snap.data()
 }
 
+/** Read a session WITHOUT registering presence. The join screen needs the game
+ *  and the roster before the guest can say which player they are. */
+export async function peekSession(code) {
+  await ensureAuth()
+  const snap = await getDoc(doc(db, COL, normalizeCode(code)))
+  if (!snap.exists()) throw new Error('Session introuvable')
+  return snap.data()
+}
+
 /** Live subscription. cb receives the raw session doc (or null if deleted). */
 export function subscribe(code, cb, onError) {
   const ref = doc(db, COL, normalizeCode(code))
