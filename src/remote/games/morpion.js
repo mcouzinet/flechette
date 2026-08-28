@@ -42,6 +42,7 @@ export const meta = {
   id: 'morpion',
   name: 'Morpion',
   short: 'Aligne 3 cases',
+  scoreLabel: 'Cases prises', // legende de scoreboard().value (modale de victoire)
   minPlayers: 2,
   maxPlayers: 2,
   dartsPerTurn: 1,

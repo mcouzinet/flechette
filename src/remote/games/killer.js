@@ -35,6 +35,7 @@ export const meta = {
   id: 'killer',
   name: 'Killer',
   short: 'Deviens killer, élimine les autres',
+  scoreLabel: 'Vies restantes', // legende de scoreboard().value (modale de victoire)
   minPlayers: 2,
   dartsPerTurn: DARTS_PER_TURN,
 }

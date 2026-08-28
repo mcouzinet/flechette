@@ -25,6 +25,7 @@ export const meta = {
   id: 'countup',
   name: 'Count Up',
   short: '8 manches, max de points',
+  scoreLabel: 'Points marqués', // legende de scoreboard().value (modale de victoire)
   minPlayers: 2,
   dartsPerTurn: DARTS_PER_TURN,
 }

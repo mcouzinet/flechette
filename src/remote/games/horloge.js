@@ -44,6 +44,7 @@ export const meta = {
   id: 'horloge',
   name: 'Horloge',
   short: 'Enchaîne 1→20 puis le Bull',
+  scoreLabel: 'Parcours', // legende de scoreboard().value (modale de victoire)
   minPlayers: 2,
   dartsPerTurn: DARTS_PER_TURN,
 }

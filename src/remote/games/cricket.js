@@ -45,6 +45,7 @@ export const meta = {
   id: 'cricket',
   name: 'Cricket',
   short: 'Ferme 20→15 + Bull, moins de points',
+  scoreLabel: 'Points encaissés', // legende de scoreboard().value (modale de victoire)
   minPlayers: 2,
 }
 

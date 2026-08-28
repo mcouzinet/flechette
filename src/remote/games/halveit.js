@@ -40,6 +40,7 @@ export const meta = {
   id: 'halveit',
   name: 'Halve It',
   short: '9 cibles, rate et ton score est divisé par 2',
+  scoreLabel: 'Points marqués', // legende de scoreboard().value (modale de victoire)
   minPlayers: 2,
   dartsPerTurn: DARTS_PER_TURN,
 }

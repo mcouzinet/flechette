@@ -34,6 +34,19 @@
          texte generique « Regles du jeu. », identique pour les dix jeux. -->
     <template #rules-content><RulesList :rules="rules" /></template>
 
+    <!-- Stats de victoire. Les jeux locaux les ecrivent a la main depuis leur
+         etat interne (vies, eliminations, moyenne) ; les reducteurs distants
+         exposent une forme uniforme, alors la coquille n'en affichait aucune.
+         On les derive de ce que tous les jeux fournissent deja : le nombre de
+         coups joues, et la valeur du gagnant avec la legende que son moteur
+         declare. -->
+    <template v-if="winnerStats.length" #winner-stats>
+      <div v-for="stat in winnerStats" :key="stat.label">
+        <div class="text-2xl" style="font-family: var(--font-display); color: var(--chalk-green)">{{ stat.value }}</div>
+        <div class="text-sm" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">{{ stat.label }}</div>
+      </div>
+    </template>
+
     <template v-if="standings" #sidebar-top>
       <component :is="standings" :state="state" :game="game" />
     </template>
@@ -194,6 +207,17 @@ export default {
     historyEntries() { return this.derived.history },
     board() { return this.session ? BOARDS[this.session.gameId] || null : null },
     rules() { return this.session ? rulesFor(this.session.gameId) : [] },
+    winnerStats() {
+      if (!this.state || !this.state.finished || !this.game) return []
+      const stats = [{ value: (this.session.actions || []).length, label: 'Coups joués' }]
+      // `value` n'a pas le meme sens d'un jeu a l'autre : sans legende declaree
+      // par le moteur, mieux vaut ne rien afficher qu'un nombre nu.
+      const label = this.game.meta.scoreLabel
+      const row = label && (this.game.selectors.scoreboard(this.state) || [])
+        .find((r) => String(r.id) === String(this.state.winnerId))
+      if (row && row.value != null && row.value !== '') stats.push({ value: row.value, label })
+      return stats
+    },
     standings() { return this.session ? STANDINGS[this.session.gameId] || null : null },
     winnerName() {
       const w = this.state && this.game.selectors.winner(this.state)

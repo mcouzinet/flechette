@@ -33,6 +33,7 @@ export const meta = {
   id: 'shanghai',
   name: 'Shanghai',
   short: '20 manches 1→20, Shanghai = victoire',
+  scoreLabel: 'Points marqués', // legende de scoreboard().value (modale de victoire)
   minPlayers: 2,
   dartsPerTurn: DARTS_PER_TURN,
 }

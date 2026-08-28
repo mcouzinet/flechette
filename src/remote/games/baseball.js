@@ -33,6 +33,7 @@ export const meta = {
   id: 'baseball',
   name: 'Baseball',
   short: '9 manches, max de runs',
+  scoreLabel: 'Runs marqués', // legende de scoreboard().value (modale de victoire)
   minPlayers: 2,
   dartsPerTurn: DARTS_PER_TURN,
 }
