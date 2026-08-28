@@ -199,14 +199,7 @@
       @confirm-reset="resetGame"
       @close-winner="showWinnerModal = false"
       @new-game="resetGame">
-      <template #rules-content>
-        <p><span style="color: var(--chalk-cream)">But du jeu :</span> Survivre aux 21 rounds en visant les doubles, en partant de 27 points.</p>
-        <p><span style="color: var(--chalk-cream)">Cibles :</span> Round 1 = Double 1, Round 2 = Double 2... jusqu'au Round 20 = Double 20, puis Double Bulle.</p>
-        <p><span style="color: var(--chalk-cream)">Touche :</span> Si tu touches le double, tu gagnes sa valeur (double 5 = +10 points).</p>
-        <p><span style="color: var(--chalk-cream)">Manque :</span> Si tu manques, tu perds la valeur du double (double 5 = -10 points).</p>
-        <p><span style="color: var(--chalk-cream)">Elimination :</span> Si ton score tombe a 0 ou en dessous, tu es elimine.</p>
-        <p><span style="color: var(--chalk-cream)">Victoire :</span> Le dernier survivant ou le meilleur score apres 21 rounds gagne.</p>
-      </template>
+      <template #rules-content><RulesList :rules="rules" /></template>
       <template #winner-stats>
         <div class="col-span-2">
           <div class="text-2xl" style="font-family: var(--font-display); color: var(--chalk-green)">{{ winner?.score }} points</div>
@@ -243,10 +236,12 @@ import keyboardUndoMixin from '../mixins/keyboardUndoMixin.js';
 import GameHeader from './shared/GameHeader.vue';
 import GameModals from './shared/GameModals.vue';
 import HistoryPanel from './shared/HistoryPanel.vue';
+import RulesList from './shared/RulesList.vue';
+import { RULES } from '../rules.js';
 
 export default {
   name: "Bobs27",
-  components: { GameHeader, GameModals, HistoryPanel },
+  components: { GameHeader, GameModals, HistoryPanel, RulesList },
   mixins: [fullscreenMixin, keyboardUndoMixin],
   emits: ['exit'],
   props: {
@@ -257,6 +252,7 @@ export default {
   },
   data() {
     return {
+      rules: RULES.bobs27,
       gamePlayers: [],
       currentPlayerIndex: 0,
       currentRound: 0,

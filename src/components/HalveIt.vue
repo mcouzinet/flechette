@@ -226,14 +226,7 @@
       @confirm-reset="resetGame"
       @close-winner="showWinnerModal = false"
       @new-game="resetGame">
-      <template #rules-content>
-        <p><span style="color: var(--chalk-cream)">But du jeu :</span> Avoir le meilleur score après 9 rounds de cibles imposées.</p>
-        <p><span style="color: var(--chalk-cream)">Déroulement :</span> Chaque round a une cible spécifique (numéro, double ou triple).</p>
-        <p><span style="color: var(--chalk-cream)">Scoring :</span> 3 fléchettes par round. Chaque touche ajoute la valeur au score.</p>
-        <p><span style="color: var(--chalk-cream)">Halve-It :</span> Si tu ne touches aucune cible valide dans un round, ton score est divisé par 2 !</p>
-        <p><span style="color: var(--chalk-cream)">Victoire :</span> Après 9 rounds, le joueur avec le plus de points gagne.</p>
-        <p><span style="color: var(--chalk-cream)">Stratégie :</span> Mieux vaut toucher au moins une fois pour éviter la division.</p>
-      </template>
+      <template #rules-content><RulesList :rules="rules" /></template>
       <template #winner-stats>
         <div>
           <div class="text-2xl" style="font-family: var(--font-display); color: var(--chalk-green)">{{ winner?.score }} points</div>
@@ -270,10 +263,12 @@ import keyboardUndoMixin from '../mixins/keyboardUndoMixin.js';
 import GameHeader from './shared/GameHeader.vue';
 import GameModals from './shared/GameModals.vue';
 import HistoryPanel from './shared/HistoryPanel.vue';
+import RulesList from './shared/RulesList.vue';
+import { RULES } from '../rules.js';
 
 export default {
   name: "HalveIt",
-  components: { GameHeader, GameModals, HistoryPanel },
+  components: { GameHeader, GameModals, HistoryPanel, RulesList },
   mixins: [fullscreenMixin, keyboardUndoMixin],
   emits: ['exit'],
   props: {
@@ -284,6 +279,7 @@ export default {
   },
   data() {
     return {
+      rules: RULES.halveit,
       gamePlayers: [],
       currentPlayerIndex: 0,
       currentRound: 0,

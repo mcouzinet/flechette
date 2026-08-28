@@ -212,13 +212,7 @@
       @confirm-reset="resetGame"
       @close-winner="showWinnerModal = false"
       @new-game="resetGame">
-      <template #rules-content>
-        <p><span style="color: var(--chalk-cream)">But du jeu :</span> Marquer le plus de points possible en 8 rounds.</p>
-        <p><span style="color: var(--chalk-cream)">Tour de jeu :</span> Chaque joueur lance 3 fl&eacute;chettes par round. Tous les points touch&eacute;s s'additionnent.</p>
-        <p><span style="color: var(--chalk-cream)">Multiplicateurs :</span> Simple = valeur, Double = x2, Triple = x3. La bulle vaut 25 (simple) ou 50 (double).</p>
-        <p><span style="color: var(--chalk-cream)">Victoire :</span> Apr&egrave;s 8 rounds, le joueur avec le plus haut score total gagne.</p>
-        <p><span style="color: var(--chalk-cream)">Id&eacute;al pour :</span> Les d&eacute;butants et l'&eacute;chauffement !</p>
-      </template>
+      <template #rules-content><RulesList :rules="rules" /></template>
       <template #winner-stats>
         <div>
           <div class="text-2xl" style="font-family: var(--font-display); color: var(--chalk-green)">{{ winner?.totalScore }}</div>
@@ -270,10 +264,12 @@ import keyboardUndoMixin from '../mixins/keyboardUndoMixin.js';
 import GameHeader from './shared/GameHeader.vue';
 import GameModals from './shared/GameModals.vue';
 import HistoryPanel from './shared/HistoryPanel.vue';
+import RulesList from './shared/RulesList.vue';
+import { RULES } from '../rules.js';
 
 export default {
   name: "CountUp",
-  components: { GameHeader, GameModals, HistoryPanel },
+  components: { GameHeader, GameModals, HistoryPanel, RulesList },
   mixins: [fullscreenMixin, keyboardUndoMixin],
   emits: ['exit'],
   props: {
@@ -284,6 +280,7 @@ export default {
   },
   data() {
     return {
+      rules: RULES.countup,
       gamePlayers: [],
       currentPlayerIndex: 0,
       currentRound: 0,

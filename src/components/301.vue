@@ -226,13 +226,7 @@
       @confirm-reset="applyReset"
       @close-winner="showWinnerModal = false"
       @new-game="resetGame">
-      <template #rules-content>
-        <p><span style="color: var(--chalk-cream)">But du jeu :</span> Partir d'un score (301, 501...) et atteindre exactement z&eacute;ro.</p>
-        <p><span style="color: var(--chalk-cream)">Tour de jeu :</span> Chaque joueur lance 3 fl&eacute;chettes par tour. Le score touch&eacute; est soustrait du total.</p>
-        <p><span style="color: var(--chalk-cream)">Multiplicateurs :</span> Simple = valeur, Double = x2, Triple = x3. La bulle vaut 25 (simple) ou 50 (double).</p>
-        <p><span style="color: var(--chalk-cream)">Score invalide :</span> Si le score d&eacute;passe le restant, le round est annul&eacute; et les 3 fl&eacute;chettes comptent comme manqu&eacute;es.</p>
-        <p><span style="color: var(--chalk-cream)">Victoire :</span> Le premier joueur &agrave; atteindre exactement 0 gagne.</p>
-      </template>
+      <template #rules-content><RulesList :rules="rules" /></template>
       <template #winner-stats>
         <div>
           <div class="text-2xl" style="font-family: var(--font-display); color: var(--chalk-green)">{{ gameRule - (winner?.score || 0) }}</div>
@@ -313,10 +307,12 @@ import keyboardUndoMixin from '../mixins/keyboardUndoMixin.js';
 import GameHeader from './shared/GameHeader.vue';
 import GameModals from './shared/GameModals.vue';
 import HistoryPanel from './shared/HistoryPanel.vue';
+import RulesList from './shared/RulesList.vue';
+import { RULES } from '../rules.js';
 
 export default {
   name: "Game301",
-  components: { GameHeader, GameModals, HistoryPanel },
+  components: { GameHeader, GameModals, HistoryPanel, RulesList },
   mixins: [fullscreenMixin, keyboardUndoMixin],
   emits: ['exit'],
   props: {
@@ -327,6 +323,7 @@ export default {
   },
   data() {
     return {
+      rules: RULES.x01,
       gamePlayers: [],
       currentPlayerIndex: 0,
       selectedScore: null,

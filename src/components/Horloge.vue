@@ -225,13 +225,7 @@
       @confirm-reset="resetGame"
       @close-winner="showWinnerModal = false"
       @new-game="resetGame">
-      <template #rules-content>
-        <p><span style="color: var(--chalk-cream)">But du jeu :</span> Toucher les num&eacute;ros de 1 &agrave; 20 dans l'ordre, puis la Bulle (25). Le plus rapide gagne.</p>
-        <p><span style="color: var(--chalk-cream)">Tour de jeu :</span> Chaque joueur lance 3 fl&eacute;chettes par tour.</p>
-        <p><span style="color: var(--chalk-cream)">Progression :</span> Il faut toucher sa cible actuelle pour avancer. Simple, double ou triple comptent tous.</p>
-        <p><span style="color: var(--chalk-cream)">Manqu&eacute; :</span> Si la fl&eacute;chette ne touche pas la cible, elle ne compte pas.</p>
-        <p><span style="color: var(--chalk-cream)">Victoire :</span> Le premier joueur &agrave; toucher tous les num&eacute;ros de 1 &agrave; 20 puis la Bulle gagne.</p>
-      </template>
+      <template #rules-content><RulesList :rules="rules" /></template>
       <template #winner-stats>
         <div>
           <div class="text-2xl font-bold" style="color: var(--chalk-green)">21/21</div>
@@ -275,10 +269,12 @@ import keyboardUndoMixin from '../mixins/keyboardUndoMixin.js';
 import GameHeader from './shared/GameHeader.vue';
 import GameModals from './shared/GameModals.vue';
 import HistoryPanel from './shared/HistoryPanel.vue';
+import RulesList from './shared/RulesList.vue';
+import { RULES } from '../rules.js';
 
 export default {
   name: "Horloge",
-  components: { GameHeader, GameModals, HistoryPanel },
+  components: { GameHeader, GameModals, HistoryPanel, RulesList },
   mixins: [fullscreenMixin, keyboardUndoMixin],
   emits: ['exit'],
   props: {
@@ -289,6 +285,7 @@ export default {
   },
   data() {
     return {
+      rules: RULES.horloge,
       gamePlayers: [],
       currentPlayerIndex: 0,
       history: [],

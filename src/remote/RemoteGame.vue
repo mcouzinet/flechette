@@ -30,6 +30,10 @@
       <p style="font-family: var(--font-hand); font-size: 19px; color: var(--chalk-gold)">Ce jeu arrive bientôt en mode à distance.</p>
     </div>
 
+    <!-- Les memes regles qu'en local : la coquille retombait sinon sur son
+         texte generique « Regles du jeu. », identique pour les dix jeux. -->
+    <template #rules-content><RulesList :rules="rules" /></template>
+
     <template v-if="standings" #sidebar-top>
       <component :is="standings" :state="state" :game="game" />
     </template>
@@ -68,6 +72,8 @@
 <script>
 import RemoteGameShell from './RemoteGameShell.vue'
 import RemoteInvite from './RemoteInvite.vue'
+import RulesList from '../components/shared/RulesList.vue'
+import { rulesFor } from '../rules.js'
 import X01Board from './boards/X01Board.vue'
 import CountUpBoard from './boards/CountUpBoard.vue'
 import ShanghaiBoard from './boards/ShanghaiBoard.vue'
@@ -141,7 +147,7 @@ function describeDart(dart, state) {
 
 export default {
   name: 'RemoteGame',
-  components: { RemoteGameShell, RemoteInvite },
+  components: { RemoteGameShell, RemoteInvite, RulesList },
   props: {
     code: { type: String, required: true },
     // Vrai quand C'EST NOUS qui venons de creer la partie : on ouvre alors le
@@ -187,6 +193,7 @@ export default {
     state() { return this.derived.state },
     historyEntries() { return this.derived.history },
     board() { return this.session ? BOARDS[this.session.gameId] || null : null },
+    rules() { return this.session ? rulesFor(this.session.gameId) : [] },
     standings() { return this.session ? STANDINGS[this.session.gameId] || null : null },
     winnerName() {
       const w = this.state && this.game.selectors.winner(this.state)
