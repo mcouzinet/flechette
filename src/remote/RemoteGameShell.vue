@@ -58,7 +58,12 @@
       @close-winner="$emit('back')"
       @new-game="onReset">
       <template #rules-content><slot name="rules-content">Règles du jeu.</slot></template>
-      <template #winner-stats><slot name="winner-stats"></slot></template>
+      <!-- Ne relayer la fente QUE si quelqu'un la remplit : un `<template>`
+           toujours present rend `$slots['winner-stats']` vrai cote GameModals,
+           qui dessinait alors son cadre vert en pointilles autour de zero
+           noeud — le rectangle vide sous « VICTOIRE ! » de chaque jeu a
+           distance. -->
+      <template v-if="$slots['winner-stats']" #winner-stats><slot name="winner-stats"></slot></template>
     </GameModals>
   </div>
 </template>
