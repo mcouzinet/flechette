@@ -158,7 +158,7 @@
           <label for="auth-email" class="sr-only">Ton adresse email</label>
           <input id="auth-email" v-model="authEmail" @keyup.enter="sendMagicLink" type="email" placeholder="ton adresse email"
             autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="email" enterkeyhint="send"
-            class="w-full bg-transparent py-3 px-2 text-base outline-none border-none rounded-none"
+            class="w-full bg-transparent py-3 px-2 text-base border-none rounded-none"
             style="border-bottom: 2px solid var(--chalk-line); color: var(--chalk-cream); font-family: var(--font-ui); -webkit-appearance: none" />
 
           <button @click="sendMagicLink" :disabled="!authEmail.trim() || authLoading"
