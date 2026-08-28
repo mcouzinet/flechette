@@ -336,14 +336,7 @@
       @confirm-reset="resetGame"
       @close-winner="showWinnerModal = false"
       @new-game="resetGame">
-      <template #rules-content>
-        <p><span style="color: var(--chalk-cream)">But du jeu :</span> Être le dernier joueur en vie. Chaque joueur a 3 vies.</p>
-        <p><span style="color: var(--chalk-cream)">Phase 1 - Attribution :</span> Chaque joueur lance une fléchette pour obtenir son numéro cible.</p>
-        <p><span style="color: var(--chalk-cream)">Phase 2 - Devenir Killer :</span> Touche le double de ton numéro pour devenir "Killer".</p>
-        <p><span style="color: var(--chalk-cream)">Phase 3 - Élimination :</span> Une fois Killer, touche le double des autres joueurs pour leur retirer une vie.</p>
-        <p><span style="color: var(--chalk-cream)">Victoire :</span> Le dernier joueur avec des vies restantes gagne.</p>
-        <p><span style="color: var(--chalk-cream)">3 fléchettes par tour.</span></p>
-      </template>
+      <template #rules-content><RulesList :rules="rules" /></template>
       <template #winner-stats>
         <div>
           <div class="text-2xl" style="font-family: var(--font-display); color: var(--chalk-green)">{{ winner?.lives }}/3</div>
@@ -395,10 +388,12 @@ import keyboardUndoMixin from '../mixins/keyboardUndoMixin.js';
 import GameHeader from './shared/GameHeader.vue';
 import GameModals from './shared/GameModals.vue';
 import HistoryPanel from './shared/HistoryPanel.vue';
+import RulesList from './shared/RulesList.vue';
+import { RULES } from '../rules.js';
 
 export default {
   name: "Killer",
-  components: { GameHeader, GameModals, HistoryPanel },
+  components: { GameHeader, GameModals, HistoryPanel, RulesList },
   mixins: [fullscreenMixin, keyboardUndoMixin],
   emits: ['exit'],
   props: {
@@ -409,6 +404,7 @@ export default {
   },
   data() {
     return {
+      rules: RULES.killer,
       gamePlayers: [],
       currentPlayerIndex: 0,
       setupPlayerIndex: 0,

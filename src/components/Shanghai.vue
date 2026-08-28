@@ -202,13 +202,7 @@
       @confirm-reset="resetGame"
       @close-winner="showWinnerModal = false"
       @new-game="resetGame">
-      <template #rules-content>
-        <p><span style="color: var(--chalk-cream)">But du jeu :</span> Marquer le plus de points en 20 rounds, ou r&eacute;aliser un Shanghai pour gagner instantan&eacute;ment.</p>
-        <p><span style="color: var(--chalk-cream)">D&eacute;roulement :</span> Chaque round, on vise le num&eacute;ro du round (round 1 = cible 1, round 2 = cible 2, etc.).</p>
-        <p><span style="color: var(--chalk-cream)">Scoring :</span> Simple = valeur du num&eacute;ro, Double = x2, Triple = x3. Manqu&eacute; = 0 point.</p>
-        <p><span style="color: var(--chalk-cream)">Shanghai :</span> Toucher le simple + double + triple du m&ecirc;me num&eacute;ro dans un m&ecirc;me round = victoire imm&eacute;diate !</p>
-        <p><span style="color: var(--chalk-cream)">Fin de partie :</span> Apr&egrave;s 20 rounds, le joueur avec le plus de points gagne (sauf Shanghai).</p>
-      </template>
+      <template #rules-content><RulesList :rules="rules" /></template>
       <template #winner-stats>
         <div v-if="isShangaiWin" class="col-span-2 text-center mb-1">
           <div class="text-lg mb-1" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-gold)">Shanghai au Round {{ shangaiRound }}</div>
@@ -249,10 +243,12 @@ import keyboardUndoMixin from '../mixins/keyboardUndoMixin.js';
 import GameHeader from './shared/GameHeader.vue';
 import GameModals from './shared/GameModals.vue';
 import HistoryPanel from './shared/HistoryPanel.vue';
+import RulesList from './shared/RulesList.vue';
+import { RULES } from '../rules.js';
 
 export default {
   name: "Shanghai",
-  components: { GameHeader, GameModals, HistoryPanel },
+  components: { GameHeader, GameModals, HistoryPanel, RulesList },
   mixins: [fullscreenMixin, keyboardUndoMixin],
   emits: ['exit'],
   props: {
@@ -263,6 +259,7 @@ export default {
   },
   data() {
     return {
+      rules: RULES.shanghai,
       gamePlayers: [],
       currentPlayerIndex: 0,
       currentRound: 1,

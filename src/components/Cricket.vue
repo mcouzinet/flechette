@@ -172,13 +172,7 @@
       @confirm-reset="applyReset"
       @close-winner="showWinnerModal = false"
       @new-game="resetGame">
-      <template #rules-content>
-        <p><span style="color: var(--chalk-cream)">But du jeu :</span> Fermer les 7 zones (20, 19, 18, 17, 16, 15 et Bulle) avant les adversaires, avec le moins de points possible.</p>
-        <p><span style="color: var(--chalk-cream)">Fermer une zone :</span> Toucher 3 fois la zone. Les marques s'affichent : / (1 touche), ✕ (2 touches), ⊘ (fermé).</p>
-        <p><span style="color: var(--chalk-cream)">Marquer des points :</span> Quand ta zone est fermée mais pas celle d'un adversaire, chaque touche supplémentaire lui ajoute des points.</p>
-        <p><span style="color: var(--chalk-cream)">Victoire :</span> Le premier à fermer toutes les zones ET avoir le score le plus bas gagne.</p>
-        <p><span style="color: var(--chalk-cream)">Astuce :</span> Tape sur une case dans la grille pour noter une touche. Le bouton « Annuler » (ou Backspace au clavier) retire le dernier coup.</p>
-      </template>
+      <template #rules-content><RulesList :rules="rules" /></template>
       <template #winner-stats>
         <div>
           <div class="text-2xl font-bold" style="color: var(--chalk-green)">{{ winner?.score }}</div>
@@ -242,10 +236,12 @@ import keyboardUndoMixin from '../mixins/keyboardUndoMixin.js';
 import GameHeader from './shared/GameHeader.vue';
 import GameModals from './shared/GameModals.vue';
 import HistoryPanel from './shared/HistoryPanel.vue';
+import RulesList from './shared/RulesList.vue';
+import { RULES } from '../rules.js';
 
 export default {
   name: "Cricket",
-  components: { GameHeader, GameModals, HistoryPanel },
+  components: { GameHeader, GameModals, HistoryPanel, RulesList },
   mixins: [fullscreenMixin, keyboardUndoMixin],
   emits: ['exit'],
   props: {
@@ -256,6 +252,7 @@ export default {
   },
   data() {
     return {
+      rules: RULES.cricket,
       id: 0,
       currentPlayer: 0,
       history: [],

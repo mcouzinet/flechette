@@ -175,14 +175,7 @@
       @confirm-reset="resetGame"
       @close-winner="showWinnerModal = false"
       @new-game="resetBoard">
-      <template #rules-content>
-        <p><span style="color: var(--chalk-cream)">But du jeu :</span> Aligner 3 cases (horizontale, verticale ou diagonale) sur la grille 3x3.</p>
-        <p><span style="color: var(--chalk-cream)">Grille :</span> Chaque case correspond à un numéro sur la cible (20, 18, 13, 12, 14, 16, 19, 15, 17).</p>
-        <p><span style="color: var(--chalk-cream)">Tour de jeu :</span> Les joueurs alternent. Joueur 1 = X, Joueur 2 = O.</p>
-        <p><span style="color: var(--chalk-cream)">Prendre une case :</span> Touche le numéro correspondant à la case souhaitée.</p>
-        <p><span style="color: var(--chalk-cream)">Match nul :</span> Si toutes les cases sont remplies sans alignement, c'est un match nul.</p>
-        <p><span style="color: var(--chalk-cream)">Le score global est conservé entre les manches.</span></p>
-      </template>
+      <template #rules-content><RulesList :rules="rules" /></template>
       <template #winner-stats>
         <div>
           <div class="text-2xl" style="font-family: var(--font-display); color: var(--chalk-green)">{{ scores[0] }} - {{ scores[1] }}</div>
@@ -254,10 +247,12 @@ import keyboardUndoMixin from '../mixins/keyboardUndoMixin.js';
 import GameHeader from './shared/GameHeader.vue';
 import GameModals from './shared/GameModals.vue';
 import HistoryPanel from './shared/HistoryPanel.vue';
+import RulesList from './shared/RulesList.vue';
+import { RULES } from '../rules.js';
 
 export default {
   name: "Morpion",
-  components: { GameHeader, GameModals, HistoryPanel },
+  components: { GameHeader, GameModals, HistoryPanel, RulesList },
   mixins: [fullscreenMixin, keyboardUndoMixin],
   emits: ['exit'],
   props: {
@@ -268,6 +263,7 @@ export default {
   },
   data() {
     return {
+      rules: RULES.morpion,
       gamePlayers: [],
       currentPlayerIndex: 0,
       // Grille classique de morpion fléchettes : numéros répartis sur la cible

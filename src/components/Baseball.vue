@@ -154,12 +154,7 @@
       @confirm-reset="resetGame"
       @close-winner="showWinnerModal = false"
       @new-game="resetGame">
-      <template #rules-content>
-        <p><span style="color: var(--chalk-cream)">Le principe :</span> 9 manches, 3 fl&eacute;chettes par manche. A chaque manche, tu vises le num&eacute;ro correspondant : manche 1 = tu vises le 1, manche 2 = tu vises le 2, etc.</p>
-        <p><span style="color: var(--chalk-cream)">Comment marquer :</span> Seul le num&eacute;ro de la manche compte. Si tu touches la zone simple, tu marques 1 run. La zone double = 2 runs. La zone triple = 3 runs. Tout le reste = 0.</p>
-        <p><span style="color: var(--chalk-cream)">Exemple :</span> Manche 5, tu lances 3 fl&eacute;chettes sur le 5. Tu touches un simple et un triple = 4 runs pour cette manche.</p>
-        <p><span style="color: var(--chalk-cream)">Le gagnant :</span> Apr&egrave;s 9 manches, celui qui a le plus de runs au total gagne.</p>
-      </template>
+      <template #rules-content><RulesList :rules="rules" /></template>
       <template #winner-stats>
         <div class="col-span-2">
           <div class="text-2xl" style="font-family: var(--font-display); color: var(--chalk-green)">{{ winner?.totalScore }} runs</div>
@@ -196,10 +191,12 @@ import keyboardUndoMixin from '../mixins/keyboardUndoMixin.js';
 import GameHeader from './shared/GameHeader.vue';
 import GameModals from './shared/GameModals.vue';
 import HistoryPanel from './shared/HistoryPanel.vue';
+import RulesList from './shared/RulesList.vue';
+import { RULES } from '../rules.js';
 
 export default {
   name: "Baseball",
-  components: { GameHeader, GameModals, HistoryPanel },
+  components: { GameHeader, GameModals, HistoryPanel, RulesList },
   mixins: [fullscreenMixin, keyboardUndoMixin],
   emits: ['exit'],
   props: {
@@ -210,6 +207,7 @@ export default {
   },
   data() {
     return {
+      rules: RULES.baseball,
       gamePlayers: [],
       currentPlayerIndex: 0,
       currentInning: 0,
