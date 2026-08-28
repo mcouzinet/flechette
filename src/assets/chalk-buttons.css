@@ -28,11 +28,19 @@
   }
 }
 
-/* Touch devices: keep every chalk button at a comfortable tap height (~44pt). */
+/* Plancher tactile : 44 px, partout et sans condition de pointeur.
+   La règle était conditionnée à `pointer: coarse` et plafonnée à 42 px : sur
+   un 2-en-1, un iPad au trackpad ou un portable tactile, elle ne s'appliquait
+   pas du tout et les boutons de l'en-tête tombaient à 37 px. */
+.chalk-btn-ghost, .chalk-btn-green, .chalk-btn-red, .chalk-btn-gold,
+.chalk-btn {
+  min-height: 44px;
+}
+
+.chalk-btn-big { min-height: 48px; }
+
 @media (pointer: coarse) {
   .chalk-btn-ghost, .chalk-btn-green, .chalk-btn-red, .chalk-btn-gold {
-    min-height: 42px; padding: 6px 14px; font-size: 17px;
+    padding: 6px 14px; font-size: 17px;
   }
-  .chalk-btn { min-height: 42px; }
-  .chalk-btn-big { min-height: 48px; }
 }

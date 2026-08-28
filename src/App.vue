@@ -59,7 +59,7 @@
               <span class="w-6 text-[22px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">{{ index + 1 }}.</span>
               <div class="chalk-target w-5 h-5" :style="{ color: playerColors[index % playerColors.length] }"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="currentColor" opacity=".25"/><circle cx="20" cy="20" r="13" fill="var(--chalk-bg, #142019)"/><circle cx="20" cy="20" r="8" fill="currentColor" opacity=".25"/><circle cx="20" cy="20" r="3" fill="currentColor"/></svg></div>
               <span class="flex-1 text-[26px] xl:text-[30px] leading-none" style="font-family: var(--font-hand); font-weight: 600">{{ player.name }}</span>
-              <button @click="removePlayer(player.id)" class="text-2xl cursor-pointer leading-none bg-transparent border-none p-3 -m-2" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-faint2)" :aria-label="`Retirer ${player.name}`">x</button>
+              <button @click="removePlayer(player.id)" class="text-2xl cursor-pointer leading-none bg-transparent border-none grid place-items-center min-w-[44px] min-h-[44px] -mr-2" style="font-family: var(--font-hand); font-weight: 700; color: var(--chalk-faint2)" :aria-label="`Retirer ${player.name}`">x</button>
             </div>
           </div>
 
@@ -121,7 +121,7 @@
       </div>
 
       <!-- Footer mobile -->
-      <div class="xl:hidden flex items-center justify-between px-5 py-3 flex-shrink-0"
+      <div class="xl:hidden flex items-center justify-between py-3 flex-shrink-0 mx-5"
         style="border-top: 2px dashed var(--chalk-line)">
         <button @click="currentComponent = 'Resultats'" class="chalk-btn" style="color: var(--chalk-faint)">scores ✦</button>
         <button v-if="!user" @click="openAuth" class="chalk-btn" style="color: var(--chalk-faint)">connexion</button>
@@ -518,9 +518,16 @@ export default {
 
 /* Responsive home layout */
 @media (min-width: 1280px) {
+  .remote-cta { margin-left: 36px; margin-right: 36px; }
   .home-body { grid-template-columns: 330px 1fr; }
   .home-sidebar { border-right: 2px dashed var(--chalk-line); }
-  .launch-bar { padding-top: 16px; }
+  .launch-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    padding: 16px 0 4px;
+    background: linear-gradient(to top, #16241f 82%, rgba(22, 36, 31, 0) 100%);
+  }
 }
 @media (max-width: 1279px) {
   .home-sidebar { border-bottom: 2px dashed var(--chalk-line); padding-bottom: 16px; }
@@ -561,7 +568,7 @@ export default {
 /* "Play remotely" call-to-action on the home screen */
 .remote-cta {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  width: 100%; text-align: left; margin: 4px 0 22px;
+  text-align: left; margin: 4px 20px 22px;
   border: 2px solid var(--chalk-gold); border-radius: 16px; padding: 14px 18px;
   background: rgba(236, 198, 106, 0.08); cursor: pointer;
 }

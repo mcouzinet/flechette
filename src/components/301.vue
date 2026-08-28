@@ -265,7 +265,9 @@
 </template>
 
 <style scoped>
+/* Le selecteur de regle etait le dernier controle sous la cible tactile. */
 .g3-select {
+  min-height: 44px;
   font-family: var(--font-hand); font-weight: 600; font-size: 19px;
   color: var(--chalk-cream); background: transparent;
   border: 2px dashed var(--chalk-line); border-radius: 10px;
