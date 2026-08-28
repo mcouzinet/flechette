@@ -26,6 +26,7 @@ export const meta = {
   id: 'x01',
   name: '301 / 501',
   short: 'Tombe à zéro pile',
+  scoreLabel: 'Score restant', // legende de scoreboard().value (modale de victoire)
   minPlayers: 2,
   dartsPerTurn: DARTS_PER_TURN,
   options: [

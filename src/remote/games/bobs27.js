@@ -43,6 +43,7 @@ export const meta = {
   id: 'bobs27',
   name: "Bob's 27",
   short: '21 doubles, démarre à 27',
+  scoreLabel: 'Points restants', // legende de scoreboard().value (modale de victoire)
   minPlayers: 2,
   dartsPerTurn: DARTS_PER_TURN,
 }
