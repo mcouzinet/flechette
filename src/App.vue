@@ -75,11 +75,12 @@
         </div>
 
         <!-- Grille des jeux -->
-        <div class="flex-1 flex flex-col xl:overflow-y-auto chalk-scroll">
+        <div class="flex-1 flex flex-col min-h-0">
+          <div class="flex-1 min-h-0 flex flex-col xl:overflow-y-auto chalk-scroll">
           <span class="text-[26px] xl:text-[30px] mb-3 hidden xl:block" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
             ...et on joue à quoi ce soir ?</span>
 
-          <div class="grid grid-cols-2 xl:grid-cols-3 gap-2.5 xl:gap-3">
+          <div class="grid grid-cols-2 xl:grid-cols-3 gap-2.5 xl:gap-3 pt-3">
             <button v-for="game in games" :key="game.id"
               :disabled="!game.component"
               @click="game.component && (selectedGame = game.id)"
@@ -109,8 +110,11 @@
             </button>
           </div>
 
-          <!-- Barre de lancement (sticky sur mobile : le CTA reste sous le pouce) -->
-          <div class="launch-bar mt-auto flex items-center justify-between flex-shrink-0 gap-3">
+          </div>
+
+          <!-- Barre de lancement : hors de la zone qui defile, pour ne jamais
+               recouvrir la derniere tuile. -->
+          <div class="launch-bar flex items-center justify-between flex-shrink-0 gap-3">
             <span class="text-base xl:text-[22px] leading-tight" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
               <template v-if="players.length < 2">Il faut au moins deux joueurs sur la feuille.</template>
               <template v-else>{{ selectedGameName }} · {{ players.length }} joueur{{ players.length > 1 ? 's' : '' }} →</template></span>
@@ -522,11 +526,9 @@ export default {
   .home-body { grid-template-columns: 330px 1fr; }
   .home-sidebar { border-right: 2px dashed var(--chalk-line); }
   .launch-bar {
-    position: sticky;
-    bottom: 0;
-    z-index: 20;
     padding: 16px 0 4px;
-    background: linear-gradient(to top, #16241f 82%, rgba(22, 36, 31, 0) 100%);
+    border-top: 2px dashed var(--chalk-line);
+    margin-top: 10px;
   }
 }
 @media (max-width: 1279px) {
