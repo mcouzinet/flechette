@@ -19,3 +19,6 @@ recovery-codes.txt
 
 # Xcode build output (DerivedData) — machine-specific, regenerated on each build
 /build/
+
+# Artefacts de la refonte abandonnee (captures de revue)
+.impeccable/
