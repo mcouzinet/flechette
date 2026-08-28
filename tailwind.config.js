@@ -6,9 +6,6 @@ export default {
   ],
   theme: {
     extend: {
-      fontFamily: {
-        'nebula': ['Nebula Sans', 'sans-serif'],
-      },
     },
   },
   plugins: [],

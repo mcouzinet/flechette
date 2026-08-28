@@ -1,9 +1,36 @@
-import { auth } from '../firebase.js'
-import { db } from '../firestore.js'
-import { collection, addDoc, getDocs, query, orderBy, limit, where, serverTimestamp } from 'firebase/firestore'
+// Rien de Firebase n'est importe statiquement : le chemin sans compte n'ecrit
+// que dans localStorage et ne doit donc rien telecharger.
+let sdk = null
+
+async function loadSdk() {
+  if (!sdk) {
+    const [{ auth }, { db }, fs] = await Promise.all([
+      import('../firebase.js'),
+      import('../firestore.js'),
+      import('firebase/firestore'),
+    ])
+    sdk = { auth, db, ...fs }
+  }
+  return sdk
+}
+
+// Un compte n'existe que si Firebase a laisse sa trace : on peut le savoir
+// sans charger une seule ligne du SDK.
+function mayHaveAccount() {
+  try {
+    return Object.keys(localStorage).some(k => k.startsWith('firebase:authUser:'))
+  } catch {
+    return false
+  }
+}
 
 class FirebaseService {
   async sendGameVictory(gameData) {
+    if (!mayHaveAccount()) {
+      this.saveToLocalStorage(gameData)
+      return null
+    }
+    const { auth, db, collection, addDoc, serverTimestamp } = await loadSdk()
     if (!auth.currentUser) {
       this.saveToLocalStorage(gameData)
       return null
@@ -69,6 +96,8 @@ class FirebaseService {
   }
 
   async getGameResults(maxResults = 50) {
+    if (!mayHaveAccount()) return []
+    const { auth, db, collection, getDocs, query, orderBy, limit, where } = await loadSdk()
     const uid = auth.currentUser?.uid
     if (!uid) return []
 

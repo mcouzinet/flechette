@@ -24,7 +24,7 @@
         </div>
         <div class="hidden xl:flex gap-3">
           <button @click="currentComponent = 'Resultats'" class="chalk-btn" style="color: var(--chalk-faint)">les scores ✦</button>
-          <button v-if="!user" @click="showAuthModal = true" class="chalk-btn" style="color: var(--chalk-faint)">connexion</button>
+          <button v-if="!user" @click="openAuth" class="chalk-btn" style="color: var(--chalk-faint)">connexion</button>
           <div v-else class="flex items-center gap-3">
             <span class="text-lg" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-gold)">{{ user.email }}</span>
             <button @click="logout" class="chalk-btn" style="color: var(--chalk-red)">quitter</button>
@@ -122,14 +122,14 @@
       <div class="xl:hidden flex items-center justify-between px-5 py-3 flex-shrink-0"
         style="border-top: 2px dashed var(--chalk-line)">
         <button @click="currentComponent = 'Resultats'" class="chalk-btn" style="color: var(--chalk-faint)">scores ✦</button>
-        <button v-if="!user" @click="showAuthModal = true" class="chalk-btn" style="color: var(--chalk-faint)">connexion</button>
+        <button v-if="!user" @click="openAuth" class="chalk-btn" style="color: var(--chalk-faint)">connexion</button>
         <span v-else class="text-lg" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-gold)">{{ user.email }}</span>
       </div>
     </div>
 
     <!-- Composant de jeu -->
     <div v-else class="relative flex-1 xl:overflow-hidden z-10">
-      <component :is="currentComponent" :players="players" @exit="currentComponent = null" @login="showAuthModal = true" />
+      <component :is="currentComponent" :players="players" @exit="currentComponent = null" @login="openAuth" />
     </div>
 
     <!-- Modal de connexion -->
@@ -181,10 +181,32 @@
 import { defineAsyncComponent } from 'vue';
 import GameLoading from './components/GameLoading.vue';
 import GameLoadError from './components/GameLoadError.vue';
-import { auth } from './firebase.js';
-import { sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from 'firebase/auth';
 import { Capacitor } from '@capacitor/core';
-import { signInWithApple, signInWithGoogle, nativeSignOut } from './services/socialAuth.js';
+
+// Firebase Auth n'est PAS importe statiquement : "jouer sans compte" est une
+// contrainte produit, donc rien qui touche aux comptes ne doit se trouver sur
+// le chemin du premier rendu.
+let authMod = null;
+const loadAuth = async () => {
+  if (!authMod) {
+    const [{ auth }, fb, social] = await Promise.all([
+      import('./firebase.js'),
+      import('firebase/auth'),
+      import('./services/socialAuth.js'),
+    ]);
+    authMod = { auth, ...fb, ...social };
+  }
+  return authMod;
+};
+
+// Un compte n'existe que si Firebase a laisse sa trace en local.
+const mayHaveAccount = () => {
+  try {
+    return Object.keys(localStorage).some(k => k.startsWith('firebase:authUser:'));
+  } catch (e) {
+    return false;
+  }
+};
 
 // Lazy-load each game screen: the home bundle no longer ships the 10 games, the
 // whole remote stack, or Firestore — they download on demand when opened.
@@ -295,7 +317,9 @@ export default {
   },
   mounted() {
     this.loadPlayersFromStorage();
-    this.initAuth();
+    // L'etat de connexion arrive apres le premier rendu, jamais avant.
+    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 400));
+    idle(() => this.initAuth());
     const isNative = Capacitor.isNativePlatform();
     const isPWA = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
     if (isNative || isPWA) {
@@ -307,27 +331,28 @@ export default {
     if (isNative) document.documentElement.classList.add('is-native');
   },
   methods: {
-    initAuth() {
-      onAuthStateChanged(auth, (user) => {
-        this.user = user;
-      });
+    async initAuth() {
+      const href = window.location.href;
+      const retourDeLien = href.includes('oobCode') || href.includes('apiKey=');
+      // Sans session possible ni retour de lien, on ne charge rien du tout.
+      if (!retourDeLien && !mayHaveAccount()) return;
 
-      // Vérifier si on revient d'un magic link
-      if (isSignInWithEmailLink(auth, window.location.href)) {
+      const m = await loadAuth();
+      m.onAuthStateChanged(m.auth, (user) => { this.user = user; });
+
+      if (m.isSignInWithEmailLink(m.auth, href)) {
         let email = localStorage.getItem('flechette-auth-email');
         if (!email) {
           email = window.prompt('Confirmez votre email pour la connexion :');
         }
         if (email) {
-          signInWithEmailLink(auth, email, window.location.href)
-            .then(() => {
-              localStorage.removeItem('flechette-auth-email');
-              // Nettoyer l'URL des paramètres du magic link
-              window.history.replaceState({}, document.title, window.location.pathname);
-            })
-            .catch((error) => {
-              console.error('Erreur connexion magic link:', error);
-            });
+          try {
+            await m.signInWithEmailLink(m.auth, email, href);
+            localStorage.removeItem('flechette-auth-email');
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } catch (error) {
+            console.error('Erreur connexion magic link:', error);
+          }
         }
       }
     },
@@ -343,7 +368,8 @@ export default {
       };
 
       try {
-        await sendSignInLinkToEmail(auth, this.authEmail, actionCodeSettings);
+        const m = await loadAuth();
+        await m.sendSignInLinkToEmail(m.auth, this.authEmail, actionCodeSettings);
         localStorage.setItem('flechette-auth-email', this.authEmail);
         this.authMessage = 'Lien de connexion envoyé ! Vérifiez vos emails.';
         this.authEmail = '';
@@ -359,7 +385,9 @@ export default {
       this.authLoading = true;
       this.authMessage = '';
       try {
-        await signInWithApple();
+        const m = await loadAuth();
+        await m.signInWithApple();
+        m.onAuthStateChanged(m.auth, (user) => { this.user = user; });
         this.showAuthModal = false;
       } catch (error) {
         console.error('Erreur connexion Apple:', error);
@@ -373,7 +401,9 @@ export default {
       this.authLoading = true;
       this.authMessage = '';
       try {
-        await signInWithGoogle();
+        const m = await loadAuth();
+        await m.signInWithGoogle();
+        m.onAuthStateChanged(m.auth, (user) => { this.user = user; });
         this.showAuthModal = false;
       } catch (error) {
         console.error('Erreur connexion Google:', error);
@@ -384,9 +414,16 @@ export default {
     },
 
     async logout() {
-      await signOut(auth);
-      await nativeSignOut();
+      const m = await loadAuth();
+      await m.signOut(m.auth);
+      await m.nativeSignOut();
+      this.user = null;
       this.showAuthModal = false;
+    },
+
+    openAuth() {
+      this.showAuthModal = true;
+      loadAuth();
     },
 
     launchSelectedGame() {
