@@ -68,7 +68,7 @@
             <label for="new-player" class="sr-only">Ajouter un joueur</label>
             <input id="new-player" v-model="newPlayerName" @keyup.enter="addPlayer" placeholder="+ ajouter un joueur..."
               autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="done"
-              class="flex-1 bg-transparent border-none py-2 px-0 outline-none rounded-none"
+              class="flex-1 bg-transparent border-none py-2 px-0 rounded-none"
               style="color: var(--chalk-cream); font-family: var(--font-hand); font-weight: 600; font-size: 24px; -webkit-appearance: none" />
             <button @click="addPlayer" class="chalk-btn" style="color: var(--chalk-green)">noter</button>
           </div>
