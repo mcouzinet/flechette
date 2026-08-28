@@ -28,18 +28,18 @@
       <section class="flex flex-col min-w-0 chalk-scroll">
 
         <!-- VERSION MOBILE : zones en lignes, joueurs en colonnes -->
-        <div class="xl:hidden">
-          <div class="grid" :style="{ gridTemplateColumns: `80px repeat(${participants.length}, 1fr)`, columnGap: '4px' }">
+        <div class="xl:hidden ck-scroll-m chalk-scroll">
+          <div class="grid ck-grid-m" :style="{ gridTemplateColumns: `72px repeat(${participants.length}, minmax(44px, 1fr))`, columnGap: '4px' }">
             <!-- Header : vide + noms joueurs -->
             <div></div>
             <div v-for="(participant, pi) in participants" :key="'mh'+participant.id" class="text-center pb-2">
               <span class="w-[9px] h-[9px] rounded-full inline-block mb-1" :style="{ background: teamColors[pi % teamColors.length], boxShadow: `0 0 6px ${teamColors[pi % teamColors.length]}66` }"></span>
-              <div class="text-sm md:text-lg leading-tight" style="font-family: var(--font-hand); font-weight: 600">{{ participant.name }}</div>
+              <div class="text-sm md:text-lg leading-tight ck-name-m" style="font-family: var(--font-hand); font-weight: 600">{{ participant.name }}</div>
             </div>
 
             <!-- Lignes par zone -->
             <template v-for="(zone, zi) in zones" :key="'mz'+zi">
-              <div class="flex items-center py-2" style="border-top: 1.5px dashed var(--chalk-line2)">
+              <div class="flex items-center py-2 ck-zone-m" style="border-top: 1.5px dashed var(--chalk-line2)">
                 <div class="text-base font-bold transition-opacity duration-500" :style="{ fontFamily: 'var(--font-display)', letterSpacing: '0.3px', textDecoration: isZoneClosed(zi) ? 'line-through' : 'none', opacity: isZoneClosed(zi) ? 0.25 : 1 }">{{ zone }}</div>
               </div>
               <button v-for="(participant, pi) in participants" :key="'mc'+participant.id+zi"
@@ -63,6 +63,9 @@
             </template>
           </div>
         </div>
+
+        <p v-if="participants.length > 5" class="xl:hidden text-[15px] pt-2" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
+          Fais glisser le tableau pour atteindre les autres joueurs &rarr;</p>
 
         <!-- VERSION DESKTOP : joueurs en lignes, zones en colonnes (original) -->
         <div class="hidden xl:block">
@@ -202,6 +205,13 @@
 }
 .ck-select option { background: var(--chalk-bg); color: var(--chalk-cream); }
 .ck-cell:hover { background: rgba(241,230,203,0.05) !important; }
+
+/* Un tableau a 8 joueurs ne tient pas dans 375 px : il defile, et il le dit.
+   La colonne des zones reste collee, sinon on perd la ligne qu'on visait. */
+.ck-scroll-m { overflow-x: auto; overscroll-behavior-x: contain; }
+.ck-grid-m { min-width: 100%; }
+.ck-zone-m { position: sticky; left: 0; z-index: 2; background: var(--chalk-bg); padding-right: 6px; }
+.ck-name-m { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .ck-legend {
   position: relative; width: 22px; height: 22px; display: inline-block; flex: none;
 }
