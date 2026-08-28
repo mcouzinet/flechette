@@ -44,6 +44,7 @@
               </div>
               <button v-for="(participant, pi) in participants" :key="'mc'+participant.id+zi"
                 @click="score(participant.id, zi)"
+                :aria-label="cellLabel(participant, zi)"
                 class="ck-cell grid place-items-center min-h-[60px] relative"
                 :style="{ borderTop: '1.5px dashed var(--chalk-line2)', background: 'transparent', borderLeft: 'none', borderRight: 'none', borderBottom: 'none', padding: '6px 0 10px', cursor: isZoneClosed(zi) ? 'default' : 'pointer' }">
                 <div class="transition-opacity duration-500" :style="{ opacity: isZoneClosed(zi) ? 0.25 : 1 }">
@@ -84,6 +85,7 @@
               </div>
               <button v-for="(_, zi) in zones" :key="zi"
                 @click="score(participant.id, zi)"
+                :aria-label="cellLabel(participant, zi)"
                 class="ck-cell grid place-items-center min-h-[94px] relative"
                 :style="{ borderTop: '1.5px dashed var(--chalk-line2)', background: 'transparent', borderLeft: 'none', borderRight: 'none', borderBottom: 'none', padding: '8px 0 12px', cursor: isZoneClosed(zi) ? 'default' : 'pointer' }">
                 <div class="transition-opacity duration-500" :style="{ opacity: isZoneClosed(zi) ? 0.25 : 1 }">
@@ -103,6 +105,8 @@
             </template>
           </div>
         </div>
+
+        <p class="sr-only" role="status" aria-live="polite">{{ liveMessage }}</p>
 
         <!-- Légende -->
         <div class="mt-auto flex items-center gap-3 xl:gap-5 pt-3 flex-wrap text-sm xl:text-[18px]" style="border-top: 2px dashed var(--chalk-line); font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
@@ -146,7 +150,7 @@
           </div>
         </div>
 
-        <HistoryPanel :history="history" @undo="onUndo">
+        <HistoryPanel :history="history" :last-label="lastLabel" @undo="onUndo">
           <template #entry="{ entry }">
             <div class="flex items-center gap-2 text-sm">
               <span class="w-2 h-2 rounded-full flex-none" :style="{ background: teamColors[participants.indexOf(entry.participant) % teamColors.length] }"></span>
@@ -281,10 +285,34 @@ export default {
     },
     totalZones() {
       return this.zones.length;
+    },
+    // La barre du pouce nomme le coup qu'elle defait.
+    lastLabel() {
+      const last = this.history[this.history.length - 1];
+      return last ? `${last.participant.name} · ${this.zones[last.nbr]}` : '';
+    },
+    liveMessage() {
+      if (this.gameFinished && this.winner) return `${this.winner.name} gagne la partie.`;
+      const last = this.history[this.history.length - 1];
+      if (!last) return '';
+      const p = last.participant;
+      const hits = p.state[last.nbr];
+      const closed = hits >= this.closedThreshold(last.nbr);
+      return `${p.name}, ${this.zones[last.nbr]}, ${hits} touche${hits > 1 ? 's' : ''}${closed ? ', zone fermee' : ''}. Score ${p.score}.`;
     }
   },
   methods: {
     onUndo() { this.cancel(); },
+
+    // Chaque case de score portait zero nom accessible : un lecteur d'ecran
+    // annoncait « bouton » 56 fois de suite, sans zone, sans joueur, sans etat.
+    cellLabel(participant, zi) {
+      const hits = participant.state[zi] || 0;
+      const zone = this.zones[zi];
+      if (this.isZoneClosed(zi)) return `${participant.name}, ${zone}, zone fermee par tout le monde`;
+      if (hits >= this.closedThreshold(zi)) return `${participant.name}, ${zone}, ferme - marquer un point de plus`;
+      return `${participant.name}, ${zone}, ${hits} touche${hits > 1 ? 's' : ''} - noter une touche`;
+    },
 
     // Le sélecteur propose, la modale décide. En v-model la nouvelle valeur
     // était déjà écrite avant qu'on sauvegarde « l'ancienne », donc annuler

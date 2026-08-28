@@ -22,13 +22,24 @@
       <slot name="entry" :entry="entry" :index="index" :total="history.length"></slot>
     </div>
   </div>
+
+  <div v-if="history.length" class="hp-spacer" aria-hidden="true"></div>
+
+  <Teleport to="body">
+    <div v-if="history.length" class="hp-bar">
+      <button @click="$emit('undo')" class="chalk-btn-red hp-bar-btn">
+        &#8634; Annuler{{ lastLabel ? ' : ' + lastLabel : ' le dernier coup' }}
+      </button>
+    </div>
+  </Teleport>
 </template>
 
 <script>
 export default {
   name: 'HistoryPanel',
   props: {
-    history: { type: Array, required: true }
+    history: { type: Array, required: true },
+    lastLabel: { type: String, default: '' }
   },
   emits: ['undo'],
   computed: {
@@ -38,3 +49,38 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+/* Annuler etait a 846 px de defilement en Cricket a 8 joueurs, alors que c'est
+   le geste le plus frequent du produit. Une barre fixe le garde sous le pouce
+   sur telephone ; rendue par le panneau, les dix jeux en heritent. */
+.hp-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, #16241f 78%, rgba(22, 36, 31, 0) 100%);
+  border-top: 2px dashed var(--chalk-line);
+}
+
+.hp-spacer {
+  height: 68px;
+  flex: none;
+}
+
+@media (min-width: 1280px) {
+  .hp-spacer { display: none; }
+}
+
+.hp-bar-btn {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (min-width: 1280px) {
+  .hp-bar { display: none; }
+}
+</style>

@@ -1,9 +1,9 @@
 <template>
   <!-- Modal Regles -->
-  <div v-if="showRules" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-    <div class="chalk-grain rounded-2xl p-6 xl:p-8 border-2 border-dashed max-w-lg mx-4 max-h-[80vh] overflow-y-auto chalk-scroll"
+  <div v-if="showRules" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" @click.self="$emit('close-rules')">
+    <div role="dialog" aria-modal="true" aria-labelledby="gm-rules-title" class="chalk-grain rounded-2xl p-6 xl:p-8 border-2 border-dashed max-w-lg mx-4 max-h-[80vh] overflow-y-auto chalk-scroll"
       style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-line)">
-      <h3 class="text-2xl text-center mb-4" style="font-family: var(--font-display); color: var(--chalk-gold)">{{ rulesTitle }}</h3>
+      <h2 id="gm-rules-title" class="text-2xl text-center mb-4" style="font-family: var(--font-display); color: var(--chalk-gold)">{{ rulesTitle }}</h2>
       <div class="space-y-3 text-[15px] leading-relaxed" style="font-family: var(--font-ui); color: var(--chalk-faint)">
         <slot name="rules-content"></slot>
       </div>
@@ -14,10 +14,10 @@
   </div>
 
   <!-- Modal Reset -->
-  <div v-if="showReset" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-    <div class="chalk-grain rounded-2xl p-8 border-2 border-dashed max-w-md mx-4"
+  <div v-if="showReset" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" @click.self="$emit('close-reset')">
+    <div role="dialog" aria-modal="true" aria-labelledby="gm-reset-title" class="chalk-grain rounded-2xl p-8 border-2 border-dashed max-w-md mx-4"
       style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-line)">
-      <h3 class="text-2xl text-center mb-4" style="font-family: var(--font-display); color: var(--chalk-red)">CONFIRMER LE RESET</h3>
+      <h2 id="gm-reset-title" class="text-2xl text-center mb-4" style="font-family: var(--font-display); color: var(--chalk-red)">CONFIRMER LE RESET</h2>
       <!-- resetMessage is app-authored copy (may contain markup), never user input -->
       <p class="text-center mb-6" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)"
         v-html="resetMessage"></p>
@@ -29,11 +29,11 @@
   </div>
 
   <!-- Modal Victoire -->
-  <div v-if="showWinner" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-    <div class="chalk-grain rounded-2xl p-8 border-2 border-solid max-w-lg mx-4 text-center"
+  <div v-if="showWinner" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50" @click.self="$emit('close-winner')">
+    <div role="dialog" aria-modal="true" aria-labelledby="gm-win-title" class="chalk-grain rounded-2xl p-8 border-2 border-solid max-w-lg mx-4 text-center"
       style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-gold)">
       <div class="text-5xl mb-4">&#127881;</div>
-      <h2 class="text-4xl mb-4" style="font-family: var(--font-display); color: var(--chalk-gold)">VICTOIRE !</h2>
+      <h2 id="gm-win-title" class="text-4xl mb-4" style="font-family: var(--font-display); color: var(--chalk-gold)">VICTOIRE !</h2>
       <div class="mb-6">
         <div class="text-2xl mb-2" style="font-family: var(--font-hand); font-weight: 700">{{ winnerName }}</div>
         <div style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">{{ winnerSubtitle }}</div>
@@ -68,6 +68,21 @@ export default {
     winnerSubtitle: { type: String, default: 'a remporté la partie !' }
   },
   emits: ['close-rules', 'close-reset', 'confirm-reset', 'close-winner', 'new-game'],
+  mounted() {
+    window.addEventListener('keydown', this.onKey)
+  },
+  beforeUnmount() {
+    window.removeEventListener('keydown', this.onKey)
+  },
+  methods: {
+    // Aucune modale ne se fermait a Echap : quatre pieges clavier.
+    onKey(e) {
+      if (e.key !== 'Escape') return
+      if (this.showRules) this.$emit('close-rules')
+      else if (this.showReset) this.$emit('close-reset')
+      else if (this.showWinner) this.$emit('close-winner')
+    }
+  },
   watch: {
     showWinner(val) {
       if (val) notifySuccess()

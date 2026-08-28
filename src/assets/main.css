@@ -80,6 +80,27 @@ html, body, #app {
   background: linear-gradient(to bottom, #1c2b25 72%, rgba(28,43,37,0.9) 88%, rgba(28,43,37,0) 100%);
 }
 
+/* Aucun style de focus n'existait dans tout le projet : un utilisateur au
+   clavier ne savait jamais ou il se trouvait. */
+:focus-visible {
+  outline: 3px solid var(--chalk-gold);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Visible des seules aides techniques. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Prevent double-tap zoom on touch devices */
 button, select, input, [role="button"] {
   touch-action: manipulation;

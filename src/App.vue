@@ -17,7 +17,7 @@
         <div>
           <div class="flex items-center gap-3">
             <div class="chalk-target w-8 h-8 xl:w-10 xl:h-10"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="currentColor" opacity=".25"/><circle cx="20" cy="20" r="13" fill="var(--chalk-bg, #142019)"/><circle cx="20" cy="20" r="8" fill="currentColor" opacity=".25"/><circle cx="20" cy="20" r="3" fill="currentColor"/></svg></div>
-            <span class="text-3xl xl:text-[44px] tracking-wider" style="font-family: var(--font-display); text-shadow: 0 1px 0 rgba(0,0,0,.3)">STONK</span>
+            <h1 class="text-3xl xl:text-[44px] tracking-wider" style="font-family: var(--font-display); text-shadow: 0 1px 0 rgba(0,0,0,.3)">STONK</h1>
           </div>
           <p class="ml-11 xl:ml-[54px] mt-1 text-lg xl:text-[22px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-gold)">
             Comme au comptoir — on ajoute, on choisit, on lance.</p>
@@ -65,7 +65,8 @@
 
           <!-- Ajout joueur -->
           <div class="flex gap-2">
-            <input v-model="newPlayerName" @keyup.enter="addPlayer" placeholder="+ ajouter un joueur..."
+            <label for="new-player" class="sr-only">Ajouter un joueur</label>
+            <input id="new-player" v-model="newPlayerName" @keyup.enter="addPlayer" placeholder="+ ajouter un joueur..."
               autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="done"
               class="flex-1 bg-transparent border-none py-2 px-0 outline-none rounded-none"
               style="color: var(--chalk-cream); font-family: var(--font-hand); font-weight: 600; font-size: 24px; -webkit-appearance: none" />
@@ -111,7 +112,8 @@
           <!-- Barre de lancement (sticky sur mobile : le CTA reste sous le pouce) -->
           <div class="launch-bar mt-auto flex items-center justify-between flex-shrink-0 gap-3">
             <span class="text-base xl:text-[22px] leading-tight" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-              {{ selectedGameName }} · {{ players.length }} joueur{{ players.length > 1 ? 's' : '' }} →</span>
+              <template v-if="players.length < 2">Il faut au moins deux joueurs sur la feuille.</template>
+              <template v-else>{{ selectedGameName }} · {{ players.length }} joueur{{ players.length > 1 ? 's' : '' }} →</template></span>
             <button @click="launchSelectedGame" :disabled="players.length < 2"
               class="chalk-btn-big disabled:opacity-40 text-xl xl:text-[30px] whitespace-nowrap">Lancer la partie</button>
           </div>
@@ -153,7 +155,8 @@
         </div>
 
         <div v-else class="space-y-4">
-          <input v-model="authEmail" @keyup.enter="sendMagicLink" type="email" placeholder="ton adresse email"
+          <label for="auth-email" class="sr-only">Ton adresse email</label>
+          <input id="auth-email" v-model="authEmail" @keyup.enter="sendMagicLink" type="email" placeholder="ton adresse email"
             autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="email" enterkeyhint="send"
             class="w-full bg-transparent py-3 px-2 text-base outline-none border-none rounded-none"
             style="border-bottom: 2px solid var(--chalk-line); color: var(--chalk-cream); font-family: var(--font-ui); -webkit-appearance: none" />
@@ -451,8 +454,6 @@ export default {
     startGameDirectly(game) {
       if (game.component && this.players.length >= 2) {
         this.currentComponent = game.component;
-      } else if (game.component && this.players.length < 2) {
-        alert('Ajoutez au moins 2 joueurs pour commencer');
       }
     },
     addPlayer() {

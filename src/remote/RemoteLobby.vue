@@ -192,7 +192,7 @@ export default {
 .lb-prow { display: flex; align-items: center; gap: 10px; border-bottom: 1.5px dashed var(--chalk-line); padding: 4px 0; }
 .lb-pnum { font-family: var(--font-hand); font-size: 20px; color: var(--chalk-faint2); width: 22px; }
 .lb-pinput {
-  flex: 1; background: transparent; border: none; outline: none; color: var(--chalk-cream);
+  flex: 1; background: transparent; border: none;  color: var(--chalk-cream);
   font-family: var(--font-hand); font-weight: 600; font-size: 24px; -webkit-appearance: none;
 }
 .lb-joinname { border-bottom: 1.5px dashed var(--chalk-line); }
@@ -204,7 +204,7 @@ export default {
 .lb-code {
   width: 100%; text-align: center; letter-spacing: 8px; background: transparent;
   border: 2px solid var(--chalk-line); border-radius: 14px; padding: 14px 0; color: var(--chalk-gold);
-  font-family: var(--font-display); font-size: 32px; outline: none; -webkit-appearance: none; text-transform: uppercase;
+  font-family: var(--font-display); font-size: 32px;  -webkit-appearance: none; text-transform: uppercase;
 }
 .lb-go {
   margin-top: 6px; border: 2px solid var(--chalk-red); border-radius: 16px; padding: 12px 0; background: transparent;
