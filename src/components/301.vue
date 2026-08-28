@@ -13,8 +13,8 @@
       @confirm-reset="confirmReset">
       <template #title-extra>
         <select
-          v-model="gameRule"
-          @change="changeGameRule"
+          :value="gameRule"
+          @change="changeGameRule($event.target.value)"
           class="g3-select">
           <option value="101">101</option>
           <option value="301">301</option>
@@ -223,7 +223,7 @@
       :winner-name="winner?.name"
       @close-rules="showRulesModal = false"
       @close-reset="cancelReset"
-      @confirm-reset="resetGame"
+      @confirm-reset="applyReset"
       @close-winner="showWinnerModal = false"
       @new-game="resetGame">
       <template #rules-content>
@@ -336,7 +336,7 @@ export default {
       gameRule: 301,
       showResetModal: false,
       showRulesModal: false,
-      previousGameRule: 301,
+      pendingGameRule: null,
       showErrorModal: false,
       errorMessage: '',
       showWinnerModal: false,
@@ -468,7 +468,7 @@ export default {
         this.currentPlayer.winner = true;
         this.gameFinished = true;
         this.winner = this.currentPlayer;
-        this.sendVictoryToNotion(this.currentPlayer);
+        this.sendVictory(this.currentPlayer);
 
         setTimeout(() => {
           this.showWinnerModal = true;
@@ -480,9 +480,11 @@ export default {
         this.nextPlayer();
       }
 
-      // Reset du score actuel
-      this.selectedScore = null;
-      this.scoreType = 'single';
+      // La zone se rechoisit à chaque fléchette ; le multiplicateur, lui, reste
+      // armé jusqu'au changement de main. Il retombait sur Simple après CHAQUE
+      // fléchette, en silence : une volée T20/T20/T20 s'enregistrait 100 au
+      // lieu de 180.
+      this.selectedScore = this.scoreType === 'miss' ? 0 : null;
     },
 
 
@@ -494,6 +496,10 @@ export default {
       if (!this.gameFinished) {
         this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.gamePlayers.length;
       }
+
+      // Le multiplicateur se désarme au changement de main, jamais avant.
+      this.selectedScore = null;
+      this.scoreType = 'single';
     },
 
     undoLastScore() {
@@ -520,10 +526,13 @@ export default {
       }
     },
 
-    changeGameRule() {
-      // Sauvegarder l'ancienne règle au cas où l'utilisateur annule
-      this.previousGameRule = this.gameRule;
-      // Afficher la popup de confirmation lors du changement de règle
+    // Le sélecteur propose, la modale décide. En v-model la nouvelle valeur
+    // était déjà écrite avant qu'on sauvegarde « l'ancienne » : annuler
+    // restaurait donc la nouvelle, et l'en-tête affichait 501 pendant que la
+    // partie tournait en 301.
+    changeGameRule(value) {
+      if (String(value) === String(this.gameRule)) return;
+      this.pendingGameRule = value;
       this.showResetModal = true;
     },
 
@@ -532,9 +541,19 @@ export default {
     },
 
     cancelReset() {
-      // Restaurer l'ancienne règle si l'utilisateur annule
-      this.gameRule = this.previousGameRule;
+      // Rien n'a été appliqué : il n'y a rien à restaurer.
+      this.pendingGameRule = null;
       this.showResetModal = false;
+    },
+
+    // La modale confirme : c'est ici, et seulement ici, que la nouvelle règle
+    // est appliquée.
+    applyReset() {
+      if (this.pendingGameRule !== null) {
+        this.gameRule = this.pendingGameRule;
+        this.pendingGameRule = null;
+      }
+      this.resetGame();
     },
 
     resetGame() {
@@ -551,10 +570,10 @@ export default {
       this.showResetModal = false;
       this.showWinnerModal = false;
       this.winner = null;
-      this.previousGameRule = this.gameRule;
+      this.pendingGameRule = null;
     },
 
-    async sendVictoryToNotion(winner) {
+    async sendVictory(winner) {
       try {
         const gameData = firebaseService.prepareGameData(winner, this.gamePlayers, this.history, this.gameRule.toString());
         await firebaseService.sendGameVictory(gameData);

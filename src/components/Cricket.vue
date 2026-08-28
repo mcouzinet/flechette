@@ -13,7 +13,7 @@
       @toggle-fullscreen="toggleFullscreen"
       @confirm-reset="confirmReset">
       <template #title-extra>
-        <select v-model="bullMode" @change="changeBullMode" class="ck-select">
+        <select :value="bullMode" @change="changeBullMode($event.target.value)" class="ck-select">
           <option value="3">3 bulles</option>
           <option value="1">1 bulle</option>
           <option value="0">Sans bulle</option>
@@ -132,7 +132,7 @@
               <div class="text-[17px] leading-tight">
                 <span v-if="rank === 0" style="color: var(--chalk-green)">Meneur ✦</span>
                 <span v-else-if="p.score === participantOrdered[0].score" style="color: var(--chalk-gold)">= meneur</span>
-                <span v-else style="color: var(--chalk-gold)">{{ participantOrdered[0].score - p.score }} pts derri&egrave;re</span>
+                <span v-else style="color: var(--chalk-gold)">{{ p.score - participantOrdered[0].score }} pts de plus</span>
               </div>
               <div class="text-right leading-tight">
                 <div v-if="getTotalPointsGiven(p) > 0" class="text-[15px]" style="color: var(--chalk-gold)">{{ getTotalPointsGiven(p) }} inflig&eacute;s</div>
@@ -162,7 +162,7 @@
       :winner-name="winner?.name"
       @close-rules="showRulesModal = false"
       @close-reset="cancelReset"
-      @confirm-reset="applyBullMode"
+      @confirm-reset="applyReset"
       @close-winner="showWinnerModal = false"
       @new-game="resetGame">
       <template #rules-content>
@@ -213,6 +213,10 @@
 .ck-legend[data-hits="1"]::after { display: none; }
 .ck-legend[data-hits="2"]::after { transform: translate(-50%,-50%) rotate(-46deg); }
 .ck-legend[data-hits="3"]::after { transform: translate(-50%,-50%) rotate(-46deg); }
+/* « fermé », c'est la croix CERCLÉE — c'est ce que la modale de règles annonce
+   et ce que le tableau dessine réellement ; la légende montrait la même croix
+   que « 2 touches ». */
+.ck-legend[data-hits="3"] { box-shadow: inset 0 0 0 2px var(--chalk-faint); border-radius: 50%; }
 </style>
 
 <script>
@@ -242,7 +246,7 @@ export default {
       name: '',
       participants: [],
       bullMode: '3',
-      previousBullMode: '3',
+      pendingBullMode: null,
       zones: ['Bulle', '20', '19', '18', '17', '16', '15'],
       indexScore: [25, 20, 19, 18, 17, 16, 15],
       teamColors: ['#ef8b6f', '#86c7a0', '#ecc66a', '#6fb5ef', '#ef8fbf', '#efad6f', '#b58fef', '#6fd9d9'],
@@ -272,12 +276,29 @@ export default {
   methods: {
     onUndo() { this.cancel(); },
 
-    changeBullMode() {
+    // Le sélecteur propose, la modale décide. En v-model la nouvelle valeur
+    // était déjà écrite avant qu'on sauvegarde « l'ancienne », donc annuler
+    // appliquait quand même le changement : un joueur à « 0/7 » passait à
+    // « 1/7 » après avoir appuyé sur Annuler.
+    changeBullMode(value) {
+      if (String(value) === String(this.bullMode)) return;
       if (this.history.length > 0) {
-        this.previousBullMode = this.bullMode;
+        this.pendingBullMode = value;
         this.showResetModal = true;
       } else {
+        this.bullMode = value;
         this.applyBullMode();
+      }
+    },
+
+    // La confirmation applique la règle en attente, et elle seule.
+    applyReset() {
+      if (this.pendingBullMode !== null) {
+        this.bullMode = this.pendingBullMode;
+        this.pendingBullMode = null;
+        this.applyBullMode();
+      } else {
+        this.resetGame();
       }
     },
 
@@ -293,7 +314,6 @@ export default {
         this.indexScore = [25, 20, 19, 18, 17, 16, 15];
       }
       this.resetGame();
-      this.previousBullMode = this.bullMode;
     },
 
     initializePlayers() {
@@ -320,7 +340,7 @@ export default {
     },
 
     isWinner(participant) {
-      const hasClosedAllZones = participant.state.every(s => s >= 3);
+      const hasClosedAllZones = participant.state.every((s, zi) => s >= this.closedThreshold(zi));
       if (!hasClosedAllZones) return false;
       const globalLowestScore = Math.min(...this.participants.map(p => p.score));
       return participant.score === globalLowestScore;
@@ -367,7 +387,8 @@ export default {
     },
 
     cancelReset() {
-      this.bullMode = this.previousBullMode;
+      // Rien n'a été appliqué : il n'y a rien à restaurer.
+      this.pendingBullMode = null;
       this.showResetModal = false;
     },
 
@@ -389,7 +410,6 @@ export default {
       }
       participant.state[nbr] += 1;
       this.history[this.history.length - 1].pointsInflicted = pointsInflicted;
-      this.$forceUpdate();
       this.checkWin();
     },
 

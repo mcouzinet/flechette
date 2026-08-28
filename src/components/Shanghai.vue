@@ -374,7 +374,7 @@ export default {
           this.winner = this.currentPlayer;
           this.isShangaiWin = true;
           this.shangaiRound = this.currentRound;
-          this.sendVictoryToNotion(this.currentPlayer);
+          this.sendVictory(this.currentPlayer);
 
           setTimeout(() => {
             this.showWinnerModal = true;
@@ -420,7 +420,7 @@ export default {
       this.gameFinished = true;
       this.winner = winner;
       winner.winner = true;
-      this.sendVictoryToNotion(winner);
+      this.sendVictory(winner);
 
       setTimeout(() => {
         this.showWinnerModal = true;
@@ -488,7 +488,7 @@ export default {
       this.shangaiRound = null;
     },
 
-    async sendVictoryToNotion(winner) {
+    async sendVictory(winner) {
       try {
         const gameData = firebaseService.prepareGameData(winner, this.gamePlayers, this.history, 'Shanghai');
         await firebaseService.sendGameVictory(gameData);
