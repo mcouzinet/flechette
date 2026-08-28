@@ -109,8 +109,15 @@ const STANDINGS = {
   killer: KillerStandings,
 }
 
-function describeDart(dart) {
+function describeDart(dart, state) {
   if (!dart || dart.miss) return 'Manqué'
+  // Clic libre sur une grille de zones (Cricket) : le libelle vient de l'etat,
+  // pas d'une liste recopiee ici.
+  if (dart.zone !== undefined && dart.player !== undefined) {
+    const z = state && state.zones && state.zones[dart.zone]
+    const label = z ? z.label : `Zone ${dart.zone}`
+    return label === 'Bull' ? 'Bulle' : label
+  }
   if (dart.cell !== undefined) return `Case ${dart.cell + 1}`
   if (dart.assign !== undefined) return `N° ${dart.assign}`
   if (dart.self) return 'Devient killer'
@@ -146,15 +153,18 @@ export default {
       let s = g.createInitialState(this.session.players, this.session.config || {})
       const history = []
       const record = (action, dart, pending) => {
-        const activeId = sel.activePlayerId(s)
-        const player = (s.players.find((p) => p.id === activeId) || {}).name || ''
+        // En jeu a tour (x01, Shanghai...) le joueur vient de l'etat ; en clic
+        // libre (Cricket, Morpion) il est porte par la fleche elle-meme.
+        let activeId = sel.activePlayerId(s)
+        if (activeId == null && dart && dart.player != null) activeId = String(dart.player)
+        const player = (s.players.find((p) => String(p.id) === String(activeId)) || {}).name || ''
         s = g.reducer(s, action)
         let result = ''
         try {
-          const row = (sel.scoreboard(s) || []).find((r) => r.id === activeId)
+          const row = (sel.scoreboard(s) || []).find((r) => String(r.id) === String(activeId))
           if (row && row.value != null) result = row.value
         } catch (_) { /* ignore */ }
-        history.push({ player, text: describeDart(dart), result, pending })
+        history.push({ player, text: describeDart(dart, s), result, pending })
       }
       for (const a of this.session.actions || []) record(a, a.dart, false)
       if (this.pendingDart && (this.session.actions || []).length <= this.pendingFromCount && !s.finished) {

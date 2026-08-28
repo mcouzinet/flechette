@@ -21,9 +21,12 @@
               <div class="text-base font-bold transition-opacity duration-500"
                 :style="{ fontFamily: 'var(--font-display)', letterSpacing: '0.3px', textDecoration: zoneClosed(zi) ? 'line-through' : 'none', opacity: zoneClosed(zi) ? 0.25 : 1 }">{{ zone.label }}</div>
             </div>
-            <div v-for="(p, pi) in rows" :key="'mc' + p.id + zi"
-              class="grid place-items-center min-h-[58px] relative"
-              :style="{ borderTop: '1.5px dashed var(--chalk-line2)', padding: '6px 0 8px' }">
+            <button v-for="(p, pi) in rows" :key="'mc' + p.id + zi"
+              class="ckb-cell grid place-items-center min-h-[58px] relative"
+              :disabled="state.finished || zoneClosed(zi)"
+              :aria-label="cellLabel(p, zi)"
+              @click="$emit('throw', { player: p.id, zone: zi })"
+              :style="{ borderTop: '1.5px dashed var(--chalk-line2)', padding: '6px 0 8px', background: 'transparent', border: 'none', borderTopWidth: '1.5px', borderTopStyle: 'dashed', cursor: zoneClosed(zi) ? 'default' : 'pointer' }">
               <div class="transition-opacity duration-500" :style="{ opacity: zoneClosed(zi) ? 0.3 : 1 }">
                 <span v-if="p.marks[zi] === 0" class="w-[6px] h-[6px] rounded-full opacity-70 inline-block" style="background: var(--chalk-line)"></span>
                 <span v-else class="relative inline-block w-[36px] h-[36px]">
@@ -38,7 +41,7 @@
                     :style="{ inset: '8%', border: `2.5px solid ${color(pi)}`, opacity: 0.9 }"></span>
                 </span>
               </div>
-            </div>
+            </button>
           </template>
         </div>
       </div>
@@ -62,9 +65,12 @@
               <span class="text-[24px] leading-none truncate" style="font-family: var(--font-hand); font-weight: 600">{{ p.name }}</span>
               <span class="ml-auto text-[26px] leading-none" :style="{ fontFamily: 'var(--font-display)', color: scoreColor(p.score) }">{{ p.score }}</span>
             </div>
-            <div v-for="(zone, zi) in zones" :key="p.id + '-' + zi"
-              class="grid place-items-center min-h-[90px] relative"
-              :style="{ borderTop: '1.5px dashed var(--chalk-line2)', padding: '8px 0 10px' }">
+            <button v-for="(zone, zi) in zones" :key="p.id + '-' + zi"
+              class="ckb-cell grid place-items-center min-h-[90px] relative"
+              :disabled="state.finished || zoneClosed(zi)"
+              :aria-label="cellLabel(p, zi)"
+              @click="$emit('throw', { player: p.id, zone: zi })"
+              :style="{ padding: '8px 0 10px', background: 'transparent', border: 'none', borderTop: '1.5px dashed var(--chalk-line2)', cursor: zoneClosed(zi) ? 'default' : 'pointer' }">
               <div class="transition-opacity duration-500" :style="{ opacity: zoneClosed(zi) ? 0.3 : 1 }">
                 <span v-if="p.marks[zi] === 0" class="w-[7px] h-[7px] rounded-full opacity-70 inline-block" style="background: var(--chalk-line)"></span>
                 <span v-else class="relative inline-block w-[50px] h-[50px]">
@@ -76,7 +82,7 @@
                     :style="{ inset: '9%', border: `3px solid ${color(pi)}`, opacity: 0.9, filter: 'blur(.2px)', boxShadow: `0 0 2px ${color(pi)}55` }"></span>
                 </span>
               </div>
-            </div>
+            </button>
           </template>
         </div>
       </div>
@@ -90,35 +96,6 @@
       </div>
     </section>
 
-    <!-- ===================== PAD DE SAISIE (joueur actif, 3 fléchettes / tour) ===================== -->
-    <div class="rounded-[14px] p-3 xl:p-5" style="border: 2px dashed var(--chalk-line)">
-      <div class="flex items-center justify-between mb-2 xl:mb-5">
-        <h3 class="text-base xl:text-[22px]" style="font-family: var(--font-display); letter-spacing: 0.5px">SAISIR LE SCORE</h3>
-        <div v-if="activePlayer" class="flex items-center gap-2 xl:gap-3">
-          <span class="text-sm xl:text-[20px] truncate" style="font-family: var(--font-hand); font-weight: 600">{{ activePlayer.name }}</span>
-          <span class="flex gap-1.5 xl:gap-2">
-            <span v-for="d in 3" :key="d" class="w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full"
-              :style="{ background: d <= state.dartsLeft ? 'var(--chalk-gold)' : 'var(--chalk-line2)' }"></span>
-          </span>
-        </div>
-      </div>
-
-      <!-- Sélecteur Simple / Double / Triple + Manqué -->
-      <div class="grid grid-cols-2 gap-2 mb-3 xl:flex xl:flex-wrap xl:gap-2 xl:mb-5 xl:justify-center">
-        <button v-for="m in [1, 2, 3]" :key="m" @click="mult = m" class="ckb-type-btn"
-          :disabled="state.finished" :style="typeStyle(m === mult, 'var(--chalk-gold)')">{{ multLabel(m) }}</button>
-        <button @click="emitMiss" class="ckb-type-btn" :disabled="state.finished"
-          :style="typeStyle(false, 'var(--chalk-red)')">Manqué</button>
-      </div>
-
-      <!-- Boutons de zone : taper = émettre une fléchette -->
-      <div class="grid grid-cols-4 lg:grid-cols-7 gap-1.5 xl:gap-2">
-        <button v-for="z in zones" :key="z.pts" @click="emitZone(z)" class="ckb-num-btn"
-          :disabled="state.finished">
-          {{ z.label === 'Bull' ? 'Bulle' : z.label }}
-        </button>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -128,20 +105,18 @@
    emits: 'throw' (the game-specific dart). undo/reset/back are handled by RemoteGameShell.
 
    Cricket specifics:
-   - The marks grid (game.selectors.marksGrid) is DISPLAY-only.
-   - The remote reducer is 3-darts-per-turn (not classic free-click), so input is a pad:
-     a Simple/Double/Triple selector (= marks added) + zone buttons.
-       zone tap  -> throw { n, mult }   (Bull -> n:25, mult 1/2/3)
-       "Manqué"  -> throw { miss: true } */
+   - La grille EST la saisie, comme dans le Cricket local : on tape la case
+     d'un joueur, elle prend une marque.
+       clic sur une case -> throw { player, zone }
+   - Pas de tour, pas de multiplicateur : le Cricket de cette app se joue en
+     clic libre. Une version precedente imposait un tour de 3 flechettes, ce
+     qui obligeait a remplacer la grille par un pave de saisie. */
 const TEAM_COLORS = ['#ef8b6f', '#86c7a0', '#ecc66a', '#6fb5ef', '#ef8fbf', '#efad6f', '#b58fef', '#6fd9d9']
 
 export default {
   name: 'CricketBoard',
   props: { state: { type: Object, required: true }, game: { type: Object, required: true } },
   emits: ['throw'],
-  data() {
-    return { mult: 1 }
-  },
   computed: {
     grid() {
       return this.game.selectors.marksGrid(this.state)
@@ -155,9 +130,6 @@ export default {
     activeId() {
       return this.game.selectors.activePlayerId(this.state)
     },
-    activePlayer() {
-      return this.rows.find((r) => r.id === this.activeId) || null
-    },
   },
   methods: {
     color(i) {
@@ -170,47 +142,23 @@ export default {
     scoreColor(s) {
       return s <= 0 ? 'var(--chalk-green)' : s < 20 ? 'var(--chalk-cream)' : s < 50 ? 'var(--chalk-gold)' : 'var(--chalk-red)'
     },
-    multLabel(m) {
-      return m === 1 ? 'Simple' : m === 2 ? 'Double' : 'Triple'
+    cellLabel(p, zi) {
+      const z = this.zones[zi]
+      const label = z.label === 'Bull' ? 'Bulle' : z.label
+      const n = p.marks[zi] || 0
+      if (this.zoneClosed(zi)) return `${p.name}, ${label}, zone fermee par tout le monde`
+      if (p.closed[zi]) return `${p.name}, ${label}, ferme - marquer un point de plus`
+      return `${p.name}, ${label}, ${n} touche${n > 1 ? 's' : ''} - noter une touche`
     },
-    typeStyle(on, onColor) {
-      return {
-        color: on ? 'var(--chalk-bg)' : 'var(--chalk-faint)',
-        background: on ? onColor : 'transparent',
-        borderColor: on ? onColor : 'var(--chalk-line)',
-      }
-    },
-    emitZone(zone) {
-      if (this.state.finished) return
-      // Bull's dart number is 25; other zones use their label number (= pts).
-      const n = zone.label === 'Bull' ? 25 : zone.pts
-      // there is no triple bull — the bull tops out at double (2 marks).
-      const mult = n === 25 ? Math.min(this.mult, 2) : this.mult
-      this.$emit('throw', { n, mult })
-    },
-    emitMiss() {
-      if (this.state.finished) return
-      this.$emit('throw', { miss: true })
-    },
+
   },
 }
 </script>
 
 <style scoped>
-.ckb-type-btn {
-  font-family: var(--font-display); letter-spacing: 0.5px; font-size: 22px;
-  border: 2px solid; border-radius: 14px; padding: 16px 0; cursor: pointer;
-  line-height: 1.1; transition: all 0.2s;
-}
-.ckb-type-btn:hover:not(:disabled) { background: rgba(241, 230, 203, 0.06); }
-.ckb-type-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.ckb-num-btn {
-  height: 44px; border: 2px solid var(--chalk-line); border-radius: 10px;
-  font-family: var(--font-display); font-size: 17px; letter-spacing: 0.5px;
-  color: var(--chalk-cream); cursor: pointer; transition: all 0.15s; background: transparent;
-}
-.ckb-num-btn:hover:not(:disabled) { background: rgba(241, 230, 203, 0.06); border-color: var(--chalk-gold); }
-.ckb-num-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ckb-cell:hover:not(:disabled) { background: rgba(241, 230, 203, 0.05); }
+.ckb-cell:disabled { cursor: default; }
+
 .ckb-legend { position: relative; width: 22px; height: 22px; display: inline-block; flex: none; }
 .ckb-legend::before, .ckb-legend::after {
   content: ''; position: absolute; left: 50%; top: 50%; width: 2.4px; height: 60%;
@@ -223,7 +171,5 @@ export default {
 .ckb-legend[data-hits="3"] { border-radius: 9999px; box-shadow: inset 0 0 0 2.4px var(--chalk-faint); }
 .ckb-legend[data-hits="3"]::before, .ckb-legend[data-hits="3"]::after { display: none; }
 @media (min-width: 1280px) {
-  .ckb-type-btn { padding: 16px 24px; }
-  .ckb-num-btn { height: 54px; font-size: 20px; }
 }
 </style>
