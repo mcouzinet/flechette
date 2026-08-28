@@ -19,16 +19,16 @@
     </header>
 
     <div class="flex-1 overflow-y-auto px-5 py-5 chalk-scroll relative">
-      <!-- Non connecté -->
-      <div v-if="!user" class="text-center py-16">
-        <div class="text-6xl mb-4" style="opacity: 0.15">&#128274;</div>
-        <div class="text-lg" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">Connecte-toi pour voir ton historique</div>
-        <div class="text-sm mt-2" style="font-family: var(--font-hand); color: var(--chalk-faint2)">Tes scores sont liés à ton compte</div>
-        <button @click="$emit('login')" class="chalk-btn mt-6" style="color: var(--chalk-gold)">Se connecter</button>
+      <!-- Les parties jouees sans compte sont ecrites en local : elles
+           s'affichent toujours. La connexion sert a les retrouver ailleurs,
+           elle ne conditionne plus l'acces a son propre historique. -->
+      <div v-if="!user && results.length > 0" class="flex flex-wrap items-baseline justify-center gap-3 mb-6 text-center">
+        <span class="text-lg" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">Ces parties vivent sur cet appareil.</span>
+        <button @click="$emit('login')" class="chalk-btn" style="color: var(--chalk-gold)">Se connecter</button>
       </div>
 
       <!-- Filtres -->
-      <div v-if="user" class="flex flex-wrap gap-2 mb-6 justify-center">
+      <div v-if="availableGames.length > 1" class="flex flex-wrap gap-2 mb-6 justify-center">
         <button
           @click="filter = null"
           :class="filter === null ? 'chalk-filter-active' : 'chalk-filter'">
@@ -44,7 +44,7 @@
       </div>
 
       <!-- Stats résumées -->
-      <div v-if="user && filteredResults.length > 0" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 max-w-4xl mx-auto">
+      <div v-if="filteredResults.length > 0" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 max-w-4xl mx-auto">
         <div class="chalk-stat-card">
           <div class="text-[32px]" style="font-family: var(--font-display); color: var(--chalk-gold)">{{ filteredResults.length }}</div>
           <div class="text-[15px]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">Parties</div>
@@ -64,7 +64,7 @@
       </div>
 
       <!-- Liste des résultats -->
-      <div v-if="user" class="max-w-4xl mx-auto flex flex-col gap-3">
+      <div class="max-w-4xl mx-auto flex flex-col gap-3">
         <div
           v-for="result in filteredResults"
           :key="result.id"
@@ -103,14 +103,14 @@
       </div>
 
       <!-- État vide -->
-      <div v-if="user && !loading && filteredResults.length === 0" class="text-center py-16">
+      <div v-if="!loading && filteredResults.length === 0" class="text-center py-16">
         <div class="text-6xl mb-4" style="opacity: 0.15"></div>
         <div class="text-lg xl:text-3xl" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">Aucune partie enregistrée</div>
         <div class="text-sm xl:text-xl mt-2" style="font-family: var(--font-hand); color: var(--chalk-faint2)">Jouez une partie pour voir les résultats ici</div>
       </div>
 
       <!-- Loading -->
-      <div v-if="user && loading" class="text-center py-16">
+      <div v-if="loading" class="text-center py-16">
         <div style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">Chargement des résultats...</div>
       </div>
     </div>
@@ -136,10 +136,9 @@ export default {
   mounted() {
     this._unsubAuth = onAuthStateChanged(auth, (user) => {
       this.user = user
-      if (user) this.loadResults()
-      else this.results = []
+      this.loadResults()
     })
-    if (this.user) this.loadResults()
+    this.loadResults()
   },
   beforeUnmount() {
     if (this._unsubAuth) this._unsubAuth()
@@ -167,9 +166,28 @@ export default {
     }
   },
   methods: {
+    // Les victoires hors compte etaient collectees dans localStorage puis
+    // cachees derriere un mur de connexion - a rebours de la contrainte
+    // produit "on peut jouer sans compte". Elles s'affichent maintenant
+    // toujours, et le distant vient en complement quand on est connecte.
+    localResults() {
+      return firebaseService.getLocalVictories().map((v, i) => ({
+        id: 'local-' + i,
+        jeu: v.gameType,
+        joueurs: v.participants || [],
+        vainqueur: v.winner,
+        scoreVainqueur: v.score,
+        totalMoves: v.totalMoves,
+        date: (v.date || '').split('T')[0],
+        _local: true
+      }))
+    },
+
     async loadResults() {
       this.loading = true
-      this.results = await firebaseService.getGameResults(100)
+      const local = this.localResults()
+      const distant = this.user ? await firebaseService.getGameResults(100) : []
+      this.results = [...distant, ...local].sort((a, b) => (b.date || '').localeCompare(a.date || ''))
       this.loading = false
     },
     gameColor(game) {

@@ -462,7 +462,11 @@ export default {
     },
 
     assignNumber(n) {
-      this.gamePlayers[this.setupPlayerIndex].number = n;
+      const player = this.gamePlayers[this.setupPlayerIndex];
+      player.number = n;
+      // L'attribution entre dans l'historique : une erreur de numéro était
+      // jusqu'ici irrécupérable, il fallait relancer la partie.
+      this.history.push({ player, action: 'assign', number: n });
       this.setupPlayerIndex++;
 
       if (this.setupPlayerIndex >= this.gamePlayers.length) {
@@ -567,6 +571,15 @@ export default {
 
       const lastEntry = this.history.pop();
       const player = lastEntry.player;
+
+      // Défaire une attribution : le joueur repasse en attente et son numéro
+      // redevient disponible.
+      if (lastEntry.action === 'assign') {
+        player.number = null;
+        this.setupPlayerIndex = this.gamePlayers.findIndex(p => p.id === player.id);
+        this.phase = 'setup';
+        return;
+      }
 
       if (lastEntry.action === 'killer') {
         player.isKiller = false;

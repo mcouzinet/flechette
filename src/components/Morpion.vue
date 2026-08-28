@@ -167,12 +167,12 @@
       :show-reset="showResetModal"
       :show-winner="showWinnerModal"
       rules-title="RÈGLES DU MORPION"
-      reset-message="Remettre à zéro la manche ?<br><span style=&quot;color: var(--chalk-red)&quot;>Le score sera conservé.</span>"
+      reset-message="Effacer la manche en cours ET le score de la série ?<br><span style=&quot;color: var(--chalk-red)&quot;>Cette action est irréversible.</span>"
       :winner-name="winner?.name"
       :winner-subtitle="isDraw ? 'Match nul !' : 'a aligné 3 cases !'"
       @close-rules="showRulesModal = false"
       @close-reset="showResetModal = false"
-      @confirm-reset="resetBoard"
+      @confirm-reset="resetGame"
       @close-winner="showWinnerModal = false"
       @new-game="resetBoard">
       <template #rules-content>

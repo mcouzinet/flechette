@@ -17,7 +17,7 @@
           <div class="text-[15px] xl:text-[17px] leading-tight">
             <span v-if="rank === 0" style="color: var(--chalk-green)">Meneur ✦</span>
             <span v-else-if="p.score === ranked[0].score" style="color: var(--chalk-gold)">= meneur</span>
-            <span v-else style="color: var(--chalk-gold)">{{ p.score - ranked[0].score }} pts derrière</span>
+            <span v-else style="color: var(--chalk-gold)">{{ p.score - ranked[0].score }} pts de plus</span>
           </div>
           <div class="text-[17px] xl:text-[19px] leading-tight"
             :style="{ color: p.closed === p.total ? 'var(--chalk-green)' : 'var(--chalk-red)' }">{{ p.closed }}/{{ p.total }}</div>
