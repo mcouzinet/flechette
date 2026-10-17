@@ -84,6 +84,7 @@
 
 <script>
 import RemoteGameShell from './RemoteGameShell.vue'
+import { track } from '../services/analytics.js'
 import RemoteInvite from './RemoteInvite.vue'
 import RulesList from '../components/shared/RulesList.vue'
 import { rulesFor } from '../rules.js'
@@ -233,7 +234,11 @@ export default {
   },
   watch: {
     'state.finished'(now, was) {
-      if (now && was === false) notifySuccess()
+      if (now && was === false) {
+        notifySuccess()
+        // Compté une fois, par l'appareil qui a ouvert la partie.
+        if (this.invite) track('Partie terminée', { jeu: this.game?.name ?? this.session?.gameId, joueurs: (this.session?.players || []).length, distance: true })
+      }
     },
     // Drop the optimistic overlay once the snapshot moves off our pre-throw log
     // length — whether our action landed (grew), another device's did, or the

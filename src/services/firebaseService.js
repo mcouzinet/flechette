@@ -1,3 +1,4 @@
+import { track } from './analytics.js'
 // Rien de Firebase n'est importe statiquement : le chemin sans compte n'ecrit
 // que dans localStorage et ne doit donc rien telecharger.
 let sdk = null
@@ -26,6 +27,7 @@ function mayHaveAccount() {
 
 class FirebaseService {
   async sendGameVictory(gameData) {
+    track('Partie terminée', { jeu: gameData.gameType, joueurs: gameData.participants.length, distance: false })
     if (!mayHaveAccount()) {
       this.saveToLocalStorage(gameData)
       return null

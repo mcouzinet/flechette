@@ -218,6 +218,7 @@
 </template>
 
 <script>
+import { track } from './services/analytics.js';
 import { defineAsyncComponent } from 'vue';
 import GameLoading from './components/GameLoading.vue';
 import GameLoadError from './components/GameLoadError.vue';
@@ -552,6 +553,7 @@ export default {
           players: this.players.map(p => ({ id: String(p.id), name: p.name })),
           hostName: this.players[0].name,
         });
+        track('Partie commencée', { jeu: game.name, joueurs: this.players.length, distance: true });
         this.openRemoteGame(code, true);
       } catch (error) {
         console.error('Ouverture de la partie à distance:', error);
@@ -624,6 +626,7 @@ export default {
     startGameDirectly(game) {
       if (game.component && this.players.length >= 2) {
         this.currentComponent = game.component;
+        track('Partie commencée', { jeu: game.name, joueurs: this.players.length, distance: false });
       }
     },
     addPlayer() {
