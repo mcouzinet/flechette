@@ -1,7 +1,7 @@
 // Native social sign-in (Apple / Google) for Capacitor.
 // The native plugin only drives the OS sign-in UI (skipNativeAuth: true); the
 // resulting credential is handed to the Firebase JS SDK so that auth.currentUser
-// — and therefore Firestore writes in firebaseService.js — work as on the web.
+// — and therefore Firestore writes in resultsService.js — work as on the web.
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication'
 import { auth } from '../firebase.js'
 import { GoogleAuthProvider, OAuthProvider, signInWithCredential } from 'firebase/auth'

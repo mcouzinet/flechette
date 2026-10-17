@@ -1,39 +1,29 @@
 import { track } from './analytics.js'
-// Rien de Firebase n'est importe statiquement : le chemin sans compte n'ecrit
+// Rien de PocketBase n'est importe statiquement : le chemin sans compte n'ecrit
 // que dans localStorage et ne doit donc rien telecharger.
-let sdk = null
+const loadAccount = () => import('./account.js')
 
-async function loadSdk() {
-  if (!sdk) {
-    const [{ auth }, { db }, fs] = await Promise.all([
-      import('../firebase.js'),
-      import('../firestore.js'),
-      import('firebase/firestore'),
-    ])
-    sdk = { auth, db, ...fs }
-  }
-  return sdk
-}
-
-// Un compte n'existe que si Firebase a laisse sa trace : on peut le savoir
+// Un compte n'existe que si PocketBase a laisse sa trace : on peut le savoir
 // sans charger une seule ligne du SDK.
 function mayHaveAccount() {
   try {
-    return Object.keys(localStorage).some(k => k.startsWith('firebase:authUser:'))
+    return !!localStorage.getItem('pocketbase_auth')
   } catch {
     return false
   }
 }
 
-class FirebaseService {
+class ResultsService {
   async sendGameVictory(gameData) {
     track('Partie terminée', { jeu: gameData.gameType, joueurs: gameData.participants.length, distance: false })
     if (!mayHaveAccount()) {
       this.saveToLocalStorage(gameData)
       return null
     }
-    const { auth, db, collection, addDoc, serverTimestamp } = await loadSdk()
-    if (!auth.currentUser) {
+    const { currentUser } = await loadAccount()
+    const { pb } = await import('../pocketbase.js')
+    const user = currentUser()
+    if (!user) {
       this.saveToLocalStorage(gameData)
       return null
     }
@@ -57,15 +47,12 @@ class FirebaseService {
         scoreVainqueur: gameData.winner.finalScore,
         totalMoves: gameData.totalMoves,
         date: new Date().toISOString().split('T')[0],
-        createdAt: serverTimestamp(),
-        userId: auth.currentUser.uid
+        user: user.id
       }
 
-      const docRef = await addDoc(collection(db, 'game_results'), payload)
-      console.log('Victoire enregistrée dans Firebase :', docRef.id)
-      return docRef
+      return await pb.collection('game_results').create(payload)
     } catch (error) {
-      console.error('Erreur Firebase, sauvegarde locale :', error)
+      console.error('Erreur d\'enregistrement, sauvegarde locale :', error)
       this.saveToLocalStorage(gameData)
       throw error
     }
@@ -99,24 +86,19 @@ class FirebaseService {
 
   async getGameResults(maxResults = 50) {
     if (!mayHaveAccount()) return []
-    const { auth, db, collection, getDocs, query, orderBy, limit, where } = await loadSdk()
-    const uid = auth.currentUser?.uid
-    if (!uid) return []
+    const { currentUser } = await loadAccount()
+    const { pb } = await import('../pocketbase.js')
+    const user = currentUser()
+    if (!user) return []
 
     try {
-      const q = query(
-        collection(db, 'game_results'),
-        where('userId', '==', uid),
-        orderBy('createdAt', 'desc'),
-        limit(maxResults)
-      )
-      const snapshot = await getDocs(q)
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }))
+      const page = await pb.collection('game_results').getList(1, maxResults, {
+        filter: pb.filter('user = {:u}', { u: user.id }),
+        sort: '-created',
+      })
+      return page.items
     } catch (error) {
-      console.error('Erreur lecture Firestore:', error)
+      console.error('Erreur lecture des résultats :', error)
       return []
     }
   }
@@ -190,4 +172,4 @@ class FirebaseService {
   }
 }
 
-export default new FirebaseService()
+export default new ResultsService()

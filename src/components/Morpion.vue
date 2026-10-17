@@ -241,7 +241,7 @@
 </style>
 
 <script>
-import firebaseService from '../services/firebaseService.js';
+import resultsService from '../services/resultsService.js';
 import fullscreenMixin from '../mixins/fullscreenMixin.js';
 import keyboardUndoMixin from '../mixins/keyboardUndoMixin.js';
 import GameHeader from './shared/GameHeader.vue';
@@ -422,9 +422,9 @@ export default {
 
     async sendVictory(winner) {
       try {
-        const gameData = firebaseService.prepareGameData(winner, this.gamePlayers, this.history, 'Morpion');
-        await firebaseService.sendGameVictory(gameData);
-        console.log('Victoire Morpion envoyée vers Firebase !');
+        const gameData = resultsService.prepareGameData(winner, this.gamePlayers, this.history, 'Morpion');
+        await resultsService.sendGameVictory(gameData);
+        console.log('Victoire Morpion enregistrée !');
       } catch (error) {
         console.warn('Impossible d\'envoyer vers Firebase:', error.message);
       }

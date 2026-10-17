@@ -118,9 +118,8 @@
 </template>
 
 <script>
-import firebaseService from '../services/firebaseService.js'
-import { auth } from '../firebase.js'
-import { onAuthStateChanged } from 'firebase/auth'
+import resultsService from '../services/resultsService.js'
+import { currentUser, onUserChange } from '../services/account.js'
 
 export default {
   name: "Resultats",
@@ -130,11 +129,11 @@ export default {
       results: [],
       filter: null,
       loading: false,
-      user: auth.currentUser
+      user: currentUser()
     }
   },
   mounted() {
-    this._unsubAuth = onAuthStateChanged(auth, (user) => {
+    this._unsubAuth = onUserChange((user) => {
       this.user = user
       this.loadResults()
     })
@@ -171,7 +170,7 @@ export default {
     // produit "on peut jouer sans compte". Elles s'affichent maintenant
     // toujours, et le distant vient en complement quand on est connecte.
     localResults() {
-      return firebaseService.getLocalVictories().map((v, i) => ({
+      return resultsService.getLocalVictories().map((v, i) => ({
         id: 'local-' + i,
         jeu: v.gameType,
         joueurs: v.participants || [],
@@ -186,7 +185,7 @@ export default {
     async loadResults() {
       this.loading = true
       const local = this.localResults()
-      const distant = this.user ? await firebaseService.getGameResults(100) : []
+      const distant = this.user ? await resultsService.getGameResults(100) : []
       this.results = [...distant, ...local].sort((a, b) => (b.date || '').localeCompare(a.date || ''))
       this.loading = false
     },

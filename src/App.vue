@@ -179,37 +179,51 @@
         <p class="text-center mb-6 text-sm" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
           Connecte-toi pour sauvegarder tes résultats. Pas obligatoire pour jouer.</p>
 
-        <div v-if="isStandalone" class="space-y-3">
-          <button @click="signInApple" :disabled="authLoading"
+        <!-- App native : Apple ou Google (navigateur système), l'email en secours. -->
+        <div v-if="isStandalone" class="space-y-3 mb-5">
+          <button @click="signInProvider('apple')" :disabled="authLoading"
             class="chalk-btn w-full disabled:opacity-40" style="color: var(--chalk-cream)">&#63743; Continuer avec Apple</button>
-          <button @click="signInGoogle" :disabled="authLoading"
+          <button @click="signInProvider('google')" :disabled="authLoading"
             class="chalk-btn w-full disabled:opacity-40" style="color: var(--chalk-gold)">Continuer avec Google</button>
-
-          <div v-if="authMessage" :class="[
-            'text-center text-sm p-3 rounded-lg',
-            authMessage.includes('Erreur') ? 'text-[var(--chalk-red)]' : 'text-[var(--chalk-green)]'
-          ]" style="font-family: var(--font-hand); font-weight: 600">{{ authMessage }}</div>
+          <p class="text-center text-sm pt-2" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">ou par email</p>
         </div>
 
-        <div v-else class="space-y-4">
+        <!-- Email : un code à 6 chiffres, plus de lien magique. -->
+        <div v-if="!otpId" class="space-y-4">
           <label for="auth-email" class="sr-only">Ton adresse email</label>
-          <input id="auth-email" v-model="authEmail" @keyup.enter="sendMagicLink" type="email" placeholder="ton adresse email"
+          <input id="auth-email" v-model="authEmail" @keyup.enter="sendCode" type="email" placeholder="ton adresse email"
             autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="email" enterkeyhint="send"
             class="w-full bg-transparent py-3 px-2 text-base border-none rounded-none"
             style="border-bottom: 2px solid var(--chalk-line); color: var(--chalk-cream); font-family: var(--font-ui); -webkit-appearance: none" />
 
-          <button @click="sendMagicLink" :disabled="!authEmail.trim() || authLoading"
+          <button @click="sendCode" :disabled="!authEmail.trim() || authLoading"
             class="chalk-btn-big w-full disabled:opacity-40">
-            {{ authLoading ? 'Envoi en cours...' : 'Recevoir un lien de connexion' }}
+            {{ authLoading ? 'Envoi en cours...' : 'Recevoir un code' }}
           </button>
+        </div>
+
+        <div v-else class="space-y-4">
+          <p class="text-center text-sm" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
+            Code envoyé à {{ authEmail }}.</p>
+          <label for="auth-code" class="sr-only">Code reçu par email</label>
+          <input id="auth-code" v-model="authCode" @keyup.enter="checkCode" placeholder="code à 6 chiffres"
+            inputmode="numeric" autocomplete="one-time-code" maxlength="6" enterkeyhint="go"
+            class="w-full bg-transparent py-3 px-2 text-center text-2xl tracking-[0.4em] border-none rounded-none"
+            style="border-bottom: 2px solid var(--chalk-line); color: var(--chalk-gold); font-family: var(--font-display); -webkit-appearance: none" />
+          <button @click="checkCode" :disabled="authCode.trim().length < 6 || authLoading"
+            class="chalk-btn-big w-full disabled:opacity-40">
+            {{ authLoading ? 'Vérification...' : 'Se connecter' }}
+          </button>
+          <button @click="otpId = null; authCode = ''; authMessage = ''"
+            class="w-full text-sm cursor-pointer bg-transparent border-none" style="color: var(--chalk-faint2)">changer d'adresse</button>
+        </div>
 
           <div v-if="authMessage" :class="[
             'text-center text-sm p-3 rounded-lg',
             authMessage.includes('Erreur') ? 'text-[var(--chalk-red)]' : 'text-[var(--chalk-green)]'
           ]" style="font-family: var(--font-hand); font-weight: 600">{{ authMessage }}</div>
-        </div>
 
-        <button @click="showAuthModal = false; authMessage = ''"
+        <button @click="closeAuth"
           class="w-full mt-4 text-sm cursor-pointer bg-transparent border-none" style="color: var(--chalk-faint2)">
           Fermer</button>
       </div>
@@ -224,26 +238,15 @@ import GameLoading from './components/GameLoading.vue';
 import GameLoadError from './components/GameLoadError.vue';
 import { Capacitor } from '@capacitor/core';
 
-// Firebase Auth n'est PAS importe statiquement : "jouer sans compte" est une
-// contrainte produit, donc rien qui touche aux comptes ne doit se trouver sur
-// le chemin du premier rendu.
-let authMod = null;
-const loadAuth = async () => {
-  if (!authMod) {
-    const [{ auth }, fb, social] = await Promise.all([
-      import('./firebase.js'),
-      import('firebase/auth'),
-      import('./services/socialAuth.js'),
-    ]);
-    authMod = { auth, ...fb, ...social };
-  }
-  return authMod;
-};
+// Les comptes (PocketBase) ne sont PAS importes statiquement : "jouer sans
+// compte" est une contrainte produit, donc rien qui touche aux comptes ne doit
+// se trouver sur le chemin du premier rendu.
+const loadAuth = () => import('./services/account.js');
 
-// Un compte n'existe que si Firebase a laisse sa trace en local.
+// Un compte n'existe que si PocketBase a laisse sa trace en local.
 const mayHaveAccount = () => {
   try {
-    return Object.keys(localStorage).some(k => k.startsWith('firebase:authUser:'));
+    return !!localStorage.getItem('pocketbase_auth');
   } catch (e) {
     return false;
   }
@@ -274,6 +277,8 @@ export default {
     return {
       user: null,
       authEmail: '',
+      authCode: '',
+      otpId: null,
       showAuthModal: false,
       authMessage: '',
       authLoading: false,
@@ -390,7 +395,7 @@ export default {
       if (!this.remoteAvailable) this.remotePlay = false;
       this.remoteError = '';
     },
-    // Les reducteurs distants sont purs (aucun Firebase) : les charger juste
+    // Les reducteurs distants sont purs (aucun réseau) : les charger juste
     // pour lire min/maxPlayers ne tire pas Firestore sur l'accueil.
     async remotePlay(on) {
       this.remoteError = '';
@@ -439,82 +444,56 @@ export default {
   },
   methods: {
     async initAuth() {
-      const href = window.location.href;
-      const retourDeLien = href.includes('oobCode') || href.includes('apiKey=');
-      // Sans session possible ni retour de lien, on ne charge rien du tout.
-      if (!retourDeLien && !mayHaveAccount()) return;
-
+      // Sans trace de compte, on ne charge rien du tout.
+      if (!mayHaveAccount()) return;
       const m = await loadAuth();
-      m.onAuthStateChanged(m.auth, (user) => { this.user = user; });
-
-      if (m.isSignInWithEmailLink(m.auth, href)) {
-        let email = localStorage.getItem('flechette-auth-email');
-        if (!email) {
-          email = window.prompt('Confirmez votre email pour la connexion :');
-        }
-        if (email) {
-          try {
-            await m.signInWithEmailLink(m.auth, email, href);
-            localStorage.removeItem('flechette-auth-email');
-            window.history.replaceState({}, document.title, window.location.pathname);
-          } catch (error) {
-            console.error('Erreur connexion magic link:', error);
-          }
-        }
-      }
+      m.onUserChange((user) => { this.user = user; });
+      this.user = await m.refresh();
     },
 
-    async sendMagicLink() {
+    async sendCode() {
       if (!this.authEmail.trim()) return;
       this.authLoading = true;
       this.authMessage = '';
-
-      const actionCodeSettings = {
-        url: window.location.origin + window.location.pathname,
-        handleCodeInApp: true
-      };
-
       try {
         const m = await loadAuth();
-        await m.sendSignInLinkToEmail(m.auth, this.authEmail, actionCodeSettings);
-        localStorage.setItem('flechette-auth-email', this.authEmail);
-        this.authMessage = 'Lien de connexion envoyé ! Vérifiez vos emails.';
-        this.authEmail = '';
+        this.otpId = await m.requestCode(this.authEmail);
+        this.authCode = '';
       } catch (error) {
-        console.error('Erreur envoi magic link:', error);
-        this.authMessage = 'Erreur lors de l\'envoi. Vérifiez l\'adresse email.';
+        console.error('Envoi du code :', error);
+        this.authMessage = 'Erreur lors de l\'envoi. Vérifie l\'adresse email.';
       } finally {
         this.authLoading = false;
       }
     },
 
-    async signInApple() {
+    async checkCode() {
       this.authLoading = true;
       this.authMessage = '';
       try {
         const m = await loadAuth();
-        await m.signInWithApple();
-        m.onAuthStateChanged(m.auth, (user) => { this.user = user; });
-        this.showAuthModal = false;
+        this.user = await m.verifyCode(this.otpId, this.authCode);
+        m.onUserChange((user) => { this.user = user; });
+        this.closeAuth();
       } catch (error) {
-        console.error('Erreur connexion Apple:', error);
-        this.authMessage = 'Erreur lors de la connexion Apple.';
+        console.error('Vérification du code :', error);
+        this.authMessage = 'Erreur : code invalide ou expiré.';
       } finally {
         this.authLoading = false;
       }
     },
 
-    async signInGoogle() {
+    async signInProvider(provider) {
       this.authLoading = true;
       this.authMessage = '';
       try {
         const m = await loadAuth();
-        await m.signInWithGoogle();
-        m.onAuthStateChanged(m.auth, (user) => { this.user = user; });
-        this.showAuthModal = false;
+        this.user = await m.signInWithProvider(provider);
+        m.onUserChange((user) => { this.user = user; });
+        this.closeAuth();
       } catch (error) {
-        console.error('Erreur connexion Google:', error);
-        this.authMessage = 'Erreur lors de la connexion Google.';
+        console.error('Connexion ' + provider + ' :', error);
+        this.authMessage = 'Erreur lors de la connexion ' + (provider === 'apple' ? 'Apple' : 'Google') + '.';
       } finally {
         this.authLoading = false;
       }
@@ -522,10 +501,16 @@ export default {
 
     async logout() {
       const m = await loadAuth();
-      await m.signOut(m.auth);
-      await m.nativeSignOut();
+      m.logout();
       this.user = null;
       this.showAuthModal = false;
+    },
+
+    closeAuth() {
+      this.showAuthModal = false;
+      this.authMessage = '';
+      this.otpId = null;
+      this.authCode = '';
     },
 
     openAuth() {

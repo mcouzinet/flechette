@@ -185,7 +185,7 @@
 </style>
 
 <script>
-import firebaseService from '../services/firebaseService.js';
+import resultsService from '../services/resultsService.js';
 import fullscreenMixin from '../mixins/fullscreenMixin.js';
 import keyboardUndoMixin from '../mixins/keyboardUndoMixin.js';
 import GameHeader from './shared/GameHeader.vue';
@@ -330,8 +330,8 @@ export default {
 
     async sendVictory(winner) {
       try {
-        const gameData = firebaseService.prepareGameData(winner, this.gamePlayers, this.history, 'Baseball');
-        await firebaseService.sendGameVictory(gameData);
+        const gameData = resultsService.prepareGameData(winner, this.gamePlayers, this.history, 'Baseball');
+        await resultsService.sendGameVictory(gameData);
       } catch (error) {
         console.warn('Impossible d\'envoyer vers Firebase:', error.message);
       }
