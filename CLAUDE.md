@@ -105,4 +105,4 @@ Chaque jeu suit le meme pattern :
 - **Collections** : `sessions` (id = code de partie en minuscules, jamais listable), `actions` (une ligne par flechette, index unique session+epoch+seq, lecture avec `?s=<code>`), `game_results` (lisibles par leur seul proprietaire), `users`.
 - **Tests** : `npm run test:pb` lance `src/remote/session.pb.test.js` contre un PocketBase local vierge.
 - **Fallback** : si pas connecte ou si le serveur echoue, sauvegarde dans localStorage (`dartVictories`).
-- **Historique** : projet Firebase `flechettes-ecccb`, plus utilise par le code ; a fermer une fois les anciennes versions de l'app native retirees.
+- **Historique** : projet Firebase `flechettes-ecccb`, plus utilise par personne (l'app native n'a jamais ete publiee) : a fermer.

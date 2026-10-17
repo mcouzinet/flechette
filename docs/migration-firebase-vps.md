@@ -84,8 +84,8 @@ Une à deux journées de travail : une demi-journée serveur, une demi-journée 
 | 1. Serveur | Fait : PocketBase 0.40.5 sur https://stonk-api.tolarianstudio.com (dépôt privé `mcouzinet/stonk-api`), volume `stonk-api-data`, administrateur créé (mot de passe dans le trousseau, service `stonk-api`), sauvegarde nocturne chiffrée vers `mcouzinet/stonk-api-backups` relue avec succès. **SMTP non configuré** : variables `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` à poser dans Dokploy. |
 | 2. Sessions à distance | Fait et en production, testé à deux onglets sur le serveur réel et par `npm run test:pb`. |
 | 3. Résultats et comptes web | Fait. Ton compte recréé, tes 4 victoires importées. La connexion par code attend le SMTP. |
-| 4. App native | Code fait, iOS et Android compilent. Apple et Google attendent leurs identifiants OAuth dans PocketBase. Pas encore publiée sur les stores. |
-| 5. Bascule | Web basculé. L'app native déjà installée chez les gens parle encore à Firebase jusqu'à sa mise à jour. |
-| 6. Nettoyage | Code, dépendances et configuration Firebase retirés. **Projet Firebase gardé ouvert** tant que l'ancienne app native circule. |
+| 4. App native | Code fait, iOS et Android compilent. Apple et Google attendent leurs identifiants OAuth dans PocketBase. Jamais publiée sur les stores : aucun utilisateur à migrer. |
+| 5. Bascule | Fait : le web est basculé, et l'app native n'a jamais été publiée, donc plus aucun client ne parle à Firebase. |
+| 6. Nettoyage | Code, dépendances et configuration Firebase retirés. Il ne reste qu'à fermer le projet Firebase `flechettes-ecccb` (console Firebase, Paramètres du projet), plus rien ne l'utilise. |
 
 Trouvés en route : derrière Traefik, PocketBase doit lire `X-Forwarded-For` (sinon tous les joueurs partagent un seul quota de requêtes) ; le serveur statique n'envoie pas de `Cache-Control`, d'où un rechargement automatique quand un déploiement retire un morceau de code.
