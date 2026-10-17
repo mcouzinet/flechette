@@ -1,6 +1,6 @@
 # Stonk
 
-App de scores de flechettes entre potes. 10 jeux, Vue 3, Firebase.
+App de scores de flechettes entre potes. 10 jeux, Vue 3, PocketBase.
 
 https://stonk.tolarianstudio.com/
 
@@ -22,7 +22,7 @@ https://stonk.tolarianstudio.com/
 - Vue.js 3 (Options API)
 - Vite
 - Tailwind CSS
-- Firebase (auth magic link + Firestore pour les resultats)
+- PocketBase auto-heberge (comptes par code email, resultats, parties a distance en temps reel)
 - Deploiement sur Surge.sh
 - PWA (installable sur tablette/mobile)
 

@@ -8,7 +8,6 @@
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "npm run build && node ~/Developer/infra/deploy-static.mjs dist stonk.tolarianstudio.com",
-    "test:emulator": "firebase emulators:exec --only firestore,auth --project demo-stonk \"node src/remote/emulator-test/remote-session.emulator.test.mjs\"",
     "test:pb": "sh scripts/test-pb.sh"
   },
   "dependencies": {
@@ -23,7 +22,6 @@
     "@fontsource/anton": "^5.2.7",
     "@fontsource/caveat": "^5.2.8",
     "@fontsource/hanken-grotesk": "^5.2.8",
-    "firebase": "^12.14.0",
     "pocketbase": "^0.28.1",
     "vue": "^3.3.4"
   },
@@ -33,7 +31,6 @@
     "@vue/test-utils": "^2.4.11",
     "autoprefixer": "^10.4.21",
     "eventsource": "^5.1.3",
-    "firebase-tools": "^13.35.1",
     "happy-dom": "^20.10.6",
     "opentype.js": "^2.0.0",
     "postcss": "^8.5.6",

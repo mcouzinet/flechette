@@ -1,5 +1,7 @@
 # Plan de migration : Firebase vers le VPS Tolarian
 
+**Réalisé le 17/10/2026** (étapes 1 à 6, voir « Bilan » en fin de document).
+
 État au 17/10/2026. Projet Firebase `flechettes-ecccb`, cible : serveur Tolarian (Dokploy, voir `~/Developer/infra/README.md`).
 
 ## 1. Ce que Firebase fait aujourd'hui
@@ -74,3 +76,16 @@ Ordre choisi pour livrer par morceaux : l'étape 2 seule peut partir en producti
 ## 6. Estimation
 
 Une à deux journées de travail : une demi-journée serveur, une demi-journée sessions à distance, une demi-journée comptes web, le reste pour l'app native et les vérifications sur deux vrais appareils.
+
+## Bilan (17/10/2026)
+
+| Étape | État |
+|---|---|
+| 1. Serveur | Fait : PocketBase 0.40.5 sur https://stonk-api.tolarianstudio.com (dépôt privé `mcouzinet/stonk-api`), volume `stonk-api-data`, administrateur créé (mot de passe dans le trousseau, service `stonk-api`), sauvegarde nocturne chiffrée vers `mcouzinet/stonk-api-backups` relue avec succès. **SMTP non configuré** : variables `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` à poser dans Dokploy. |
+| 2. Sessions à distance | Fait et en production, testé à deux onglets sur le serveur réel et par `npm run test:pb`. |
+| 3. Résultats et comptes web | Fait. Ton compte recréé, tes 4 victoires importées. La connexion par code attend le SMTP. |
+| 4. App native | Code fait, iOS et Android compilent. Apple et Google attendent leurs identifiants OAuth dans PocketBase. Pas encore publiée sur les stores. |
+| 5. Bascule | Web basculé. L'app native déjà installée chez les gens parle encore à Firebase jusqu'à sa mise à jour. |
+| 6. Nettoyage | Code, dépendances et configuration Firebase retirés. **Projet Firebase gardé ouvert** tant que l'ancienne app native circule. |
+
+Trouvés en route : derrière Traefik, PocketBase doit lire `X-Forwarded-For` (sinon tous les joueurs partagent un seul quota de requêtes) ; le serveur statique n'envoie pas de `Cache-Control`, d'où un rechargement automatique quand un déploiement retire un morceau de code.

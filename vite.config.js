@@ -14,7 +14,6 @@ export default defineConfig({
     }
   },
   test: {
-    // the emulator integration test only runs under `firebase emulators:exec`
-    exclude: ['**/node_modules/**', '**/dist/**', '**/emulator-test/**', '**/*.emulator.test.*'],
+    exclude: ['**/node_modules/**', '**/dist/**'],
   },
 })

@@ -11,8 +11,8 @@ Nom de l'app : Stonk
 - **Build** : Vite 4
 - **Style** : Tailwind CSS 3 + polices custom (Nebula Sans, Anton, Caveat, Hanken Grotesk)
 - **Deploiement** : serveur Tolarian via la skill `publier` (`npm run deploy`, Node 22 requis)
-- **Backend** : Firebase (Firestore pour les resultats, Auth pour magic link)
-- **Auth** : Firebase Auth magic link (optionnelle - on peut jouer sans compte). Ne fonctionne pas en mode standalone/PWA.
+- **Backend** : PocketBase auto-heberge sur le VPS (https://stonk-api.tolarianstudio.com, depot prive `mcouzinet/stonk-api`), Firebase abandonne le 17/10/2026
+- **Auth** : optionnelle (on peut jouer sans compte). Web : code a 6 chiffres par email. App native : Apple ou Google via OAuth2 PocketBase (navigateur systeme), email en secours.
 - **PWA** : Installable sur tablette/mobile (site.webmanifest, meta tags)
 
 ## Commandes
@@ -30,7 +30,7 @@ npm run deploy       # Deploie sur stonk.tolarianstudio.com
 src/
   App.vue                    # Shell : gestion joueurs + selection de jeu + auth
   main.js                    # Point d'entree Vue
-  firebase.js                # Config et init Firebase (auth + firestore)
+  pocketbase.js              # Client PocketBase (VITE_PB_URL, sinon stonk-api.tolarianstudio.com)
   components/
     shared/
       GameHeader.vue         # Header commun (retour, titre, regles, plein ecran, relancer)
@@ -46,12 +46,13 @@ src/
     Bobs27.vue               # Bob's 27 (doubles 1->20->bulle, survie)
     Baseball.vue             # Baseball (9 manches de runs)
     CountUp.vue              # Count Up (8 rounds, plus haut score gagne)
-    Resultats.vue            # Historique des parties (Firestore)
+    Resultats.vue            # Historique des parties (local + PocketBase si connecte)
   mixins/
     fullscreenMixin.js       # toggleFullscreen() + isFullscreen
     keyboardUndoMixin.js     # Backspace -> undo (avec cleanup beforeUnmount)
   services/
-    firebaseService.js       # Envoi des resultats vers Firestore + fallback localStorage
+    resultsService.js        # Envoi des resultats vers PocketBase + fallback localStorage
+    account.js               # Comptes : code email, OAuth2, deconnexion
   assets/
     main.css                 # Styles principaux (import Tailwind + fonts + variables)
     chalk-buttons.css        # Styles globaux boutons (chalk-btn-ghost/green/red/gold)
@@ -65,7 +66,7 @@ src/
 - **Langue** : Interface en francais
 - **Composants** : Options API Vue 3 (pas Composition API)
 - **Navigation** : Pas de vue-router, navigation par etat `currentComponent` dans App.vue
-- **Donnees** : LocalStorage pour joueurs (`flechette-players`), Firestore pour resultats de parties
+- **Donnees** : LocalStorage pour joueurs (`flechette-players`), PocketBase pour resultats de parties et parties a distance
 - **Style** : Theme sombre tableau noir, palette chalk (cream, red, green, gold)
 - **Polices** :
   - `--font-display` (Anton) : titres, chiffres de score, boutons d'action
@@ -79,13 +80,10 @@ src/
 ## Variables d'environnement
 
 ```
-VITE_FIREBASE_API_KEY
-VITE_FIREBASE_AUTH_DOMAIN
-VITE_FIREBASE_PROJECT_ID
-VITE_FIREBASE_STORAGE_BUCKET
-VITE_FIREBASE_MESSAGING_SENDER_ID
-VITE_FIREBASE_APP_ID
+VITE_PB_URL   # facultatif : adresse du PocketBase (defaut https://stonk-api.tolarianstudio.com)
 ```
+
+En local, `.env.development.local` (non versionne) peut pointer vers un PocketBase local : voir le README de `stonk-api`.
 
 ## Structure d'un composant de jeu
 
@@ -99,12 +97,12 @@ Chaque jeu suit le meme pattern :
 7. Detecte la victoire
 8. Utilise `GameModals` (regles via slot, reset, victoire via slot)
 9. Utilise `HistoryPanel` avec scoped slot pour les entrees
-10. Envoie les resultats via `firebaseService`
+10. Envoie les resultats via `resultsService`
 
-## Firebase
+## Backend (PocketBase)
 
-- **Projet** : flechettes-ecccb
-- **Firestore** : collection `game_results` (resultats de parties), index sur userId + createdAt
-- **Security rules** : create/read restreint au userId, pas d'update/delete
-- **Auth** : magic link email (optionnel), domaines autorises : stonk.tolarianstudio.com (et flechettes.surge.sh, historique)
-- **Fallback** : si pas connecte ou Firebase echoue, sauvegarde dans localStorage (`dartVictories`)
+- **Serveur** : application Dokploy `stonk-api` (projet Stonk), volume `stonk-api-data`, sauvegarde nocturne chiffree vers `mcouzinet/stonk-api-backups`. Schema et regles dans `pb_migrations/` du depot `stonk-api` (chaque push redeploie).
+- **Collections** : `sessions` (id = code de partie en minuscules, jamais listable), `actions` (une ligne par flechette, index unique session+epoch+seq, lecture avec `?s=<code>`), `game_results` (lisibles par leur seul proprietaire), `users`.
+- **Tests** : `npm run test:pb` lance `src/remote/session.pb.test.js` contre un PocketBase local vierge.
+- **Fallback** : si pas connecte ou si le serveur echoue, sauvegarde dans localStorage (`dartVictories`).
+- **Historique** : projet Firebase `flechettes-ecccb`, plus utilise par le code ; a fermer une fois les anciennes versions de l'app native retirees.
