@@ -22,3 +22,4 @@ recovery-codes.txt
 
 # Artefacts de la refonte abandonnee (captures de revue)
 .impeccable/
+*.local

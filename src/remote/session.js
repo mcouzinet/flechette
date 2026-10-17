@@ -1,178 +1,231 @@
 /* ============================================================
-   Remote session service — shared scoring over Firestore.
+   Remote session service : tableau partagé sur PocketBase (stonk-api).
 
-   Model (trust-based shared board):
-   - A session lives at sessions/{code} and stores the ordered ACTION LOG
-     (the source of truth) plus meta. Every device derives the game state
-     with buildState() (= actions.reduce(reducer, initial)) — one source of
-     truth, no cached-state divergence.
-   - Anyone in the session can score: throwDart appends a THROW action inside
-     a transaction (read-modify-write), so concurrent scores stay consistent.
-   - "Undo" = drop the last action. "Reset" = clear the log.
-   - Identity is anonymous Firebase auth (ensureAuth) — no login needed to play.
+   Modèle (confiance entre amis, repris de la version Firebase) :
+   - une session = un enregistrement `sessions` dont l'identifiant EST le code
+     (en minuscules). Personne ne peut lister les sessions : il faut le code.
+   - le journal d'actions vit dans la collection `actions`, une ligne par
+     fléchette, numérotée par `seq`. Un index unique (session, epoch, seq)
+     remplace la transaction Firestore : deux lancers simultanés visent le même
+     seq, le second est refusé et réessaie avec seq + 1.
+   - « Annuler » = supprimer l'action de seq maximal. « Réinitialiser » =
+     epoch + 1 sur la session : les actions des epochs précédentes sont ignorées.
+   - chaque appareil dérive l'état avec buildState() (= actions.reduce), comme
+     avant ; subscribe() livre le même objet session qu'à l'époque de Firestore
+     ({ gameId, config, players, participants, actions: [{ type, dart, by, at }] }),
+     si bien que RemoteGame et les plateaux n'ont pas changé.
+   - pas de compte : l'appareil est identifié par un jeton aléatoire local.
 
-   TRUST MODEL (important): the 6-char code is a shared *edit token* among the
-   people who have it, NOT an integrity boundary. The security rules freeze the
-   meta (host/game/players/config/createdAt) and cap the log length, but they
-   do NOT validate action *contents* — a participant could append arbitrary
-   actions out of band. The per-game validate()/isValidDart() check below is
-   UX-level input guarding for our own client; the real safety net is that the
-   reducers stay robust to garbage input. This is intentional for casual play
-   among friends. If integrity ever matters, move appends to a server-side
-   validated endpoint (Cloud Function) and reject raw client writes.
+   Le code de 6 lettres est un jeton d'édition partagé, pas une frontière
+   d'intégrité : les règles figent les métadonnées mais ne valident pas le
+   contenu des fléchettes. Les réducteurs restent robustes aux entrées farfelues.
    ============================================================ */
-import { auth } from '../firebase.js'
-import { db } from '../firestore.js'
-import { signInAnonymously } from 'firebase/auth'
-import {
-  doc, getDoc, setDoc, updateDoc, onSnapshot, runTransaction, serverTimestamp, deleteField,
-} from 'firebase/firestore'
+import { pb } from '../pocketbase.js'
 import { getGame, buildState } from './games/index.js'
 import { isValidDart } from './dart.js'
 
-const COL = 'sessions'
-// unambiguous alphabet (no O/0/I/1)
+// alphabet sans ambiguïté (ni O/0 ni I/1)
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-export const CODE_LEN = 6 // 31^6 ≈ 887M codes — blind enumeration is impractical
+export const CODE_LEN = 6 // 31^6 ≈ 887M codes : l'énumération à l'aveugle est impraticable
 
 export function generateCode() {
   let code = ''
-  for (let i = 0; i < CODE_LEN; i++) {
-    code += ALPHABET[Math.floor(Math.random() * ALPHABET.length)]
-  }
+  for (let i = 0; i < CODE_LEN; i++) code += ALPHABET[Math.floor(Math.random() * ALPHABET.length)]
   return code
-}
-
-export async function ensureAuth() {
-  if (auth.currentUser) return auth.currentUser.uid
-  const cred = await signInAnonymously(auth)
-  return cred.user.uid
-}
-
-/** Create a session and return its short code. */
-export async function createSession({ gameId, config = {}, players, hostName = 'Hôte' }) {
-  if (!getGame(gameId)) throw new Error(`Jeu inconnu: ${gameId}`)
-  if (!players || players.length < 2) throw new Error('Il faut au moins 2 joueurs')
-  const uid = await ensureAuth()
-  const normalized = players.map((p, i) => ({ id: String(p.id ?? `p${i}`), name: p.name }))
-
-  // retry a couple of times on the (very unlikely) code collision
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const code = generateCode()
-    const ref = doc(db, COL, code)
-    const existing = await getDoc(ref)
-    if (existing.exists()) continue
-    await setDoc(ref, {
-      code,
-      gameId,
-      config,
-      players: normalized,
-      actions: [],
-      hostUid: uid,
-      participants: { [uid]: { name: hostName, joinedAt: Date.now() } },
-      status: 'playing',
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    })
-    return code
-  }
-  throw new Error('Impossible de générer un code, réessaie')
-}
-
-/** Join an existing session by code; registers presence. Returns the data. */
-export async function joinSession(code, name = 'Invité') {
-  const uid = await ensureAuth()
-  const ref = doc(db, COL, normalizeCode(code))
-  const snap = await getDoc(ref)
-  if (!snap.exists()) throw new Error('Session introuvable')
-  await updateDoc(ref, {
-    [`participants.${uid}`]: { name, joinedAt: Date.now() },
-    updatedAt: serverTimestamp(),
-  })
-  return snap.data()
-}
-
-/** Read a session WITHOUT registering presence. The join screen needs the game
- *  and the roster before the guest can say which player they are. */
-export async function peekSession(code) {
-  await ensureAuth()
-  const snap = await getDoc(doc(db, COL, normalizeCode(code)))
-  if (!snap.exists()) throw new Error('Session introuvable')
-  return snap.data()
-}
-
-/** Live subscription. cb receives the raw session doc (or null if deleted). */
-export function subscribe(code, cb, onError) {
-  const ref = doc(db, COL, normalizeCode(code))
-  return onSnapshot(
-    ref,
-    (snap) => cb(snap.exists() ? snap.data() : null),
-    (err) => onError && onError(err),
-  )
-}
-
-/** Append a dart throw (transactional, concurrency-safe). The dart shape is
- *  game-specific; each game module validates it (fallback to isValidDart). */
-export async function throwDart(code, dart) {
-  const uid = await ensureAuth()
-  const ref = doc(db, COL, normalizeCode(code))
-  // Resolves to true if the throw was appended, false if it was ignored
-  // (game already finished elsewhere) — lets the caller clear its optimistic UI.
-  return runTransaction(db, async (tx) => {
-    const snap = await tx.get(ref)
-    if (!snap.exists()) throw new Error('Session introuvable')
-    const data = snap.data()
-    const game = getGame(data.gameId)
-    const valid = game && (game.validate ? game.validate(dart) : isValidDart(dart))
-    if (!valid) throw new Error('Tir invalide')
-    const state = buildState(data) // single replay of the log
-    if (state && state.finished) return false // ignore throws after the game ends
-    const action = { type: 'THROW', dart, by: uid, at: Date.now() }
-    const next = game.reducer(state, action) // incremental — avoids a 2nd full replay
-    const actions = [...(data.actions || []), action]
-    tx.update(ref, { actions, status: next && next.finished ? 'finished' : 'playing', updatedAt: serverTimestamp() })
-    return true
-  })
-}
-
-/** Undo the last action (transactional). */
-export async function undoLast(code) {
-  await ensureAuth()
-  const ref = doc(db, COL, normalizeCode(code))
-  await runTransaction(db, async (tx) => {
-    const snap = await tx.get(ref)
-    if (!snap.exists()) throw new Error('Session introuvable')
-    const data = snap.data()
-    const actions = (data.actions || []).slice(0, -1)
-    tx.update(ref, { actions, status: nextStatus(data, actions), updatedAt: serverTimestamp() })
-  })
-}
-
-/** Reset the game (keep players, clear the log). */
-export async function resetGame(code) {
-  await ensureAuth()
-  const ref = doc(db, COL, normalizeCode(code))
-  await updateDoc(ref, { actions: [], status: 'playing', updatedAt: serverTimestamp() })
-}
-
-/** Remove our presence (best-effort, on leaving). */
-export async function leaveSession(code) {
-  const uid = auth.currentUser?.uid
-  if (!uid) return
-  try {
-    await updateDoc(doc(db, COL, normalizeCode(code)), {
-      [`participants.${uid}`]: deleteField(),
-    })
-  } catch (_) {
-    /* ignore */
-  }
-}
-
-function nextStatus(data, actions) {
-  const state = buildState({ ...data, actions })
-  return state && state.finished ? 'finished' : 'playing'
 }
 
 export function normalizeCode(code) {
   return String(code || '').trim().toUpperCase()
+}
+
+const idOf = (code) => normalizeCode(code).toLowerCase()
+const q = (code) => ({ s: idOf(code) }) // les règles exigent ?s=<code> pour lire les actions
+
+// Identité de l'appareil (remplace l'auth anonyme de Firebase).
+export function deviceId() {
+  const KEY = 'stonk-device'
+  try {
+    let id = localStorage.getItem(KEY)
+    if (!id) { id = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem(KEY, id) }
+    return id
+  } catch (_) {
+    return 'anon'
+  }
+}
+
+const isNotFound = (e) => e && e.status === 404
+const isDuplicate = (e) => e && e.status === 400 && e.response && e.response.data &&
+  Object.values(e.response.data).some((f) => f && f.code === 'validation_not_unique')
+
+async function fetchSession(code) {
+  try {
+    return await pb.collection('sessions').getOne(idOf(code))
+  } catch (e) {
+    if (isNotFound(e)) throw new Error('Session introuvable')
+    throw e
+  }
+}
+
+async function fetchActions(code, epoch) {
+  return pb.collection('actions').getFullList({
+    filter: pb.filter('session = {:s} && epoch = {:e}', { s: idOf(code), e: epoch || 0 }),
+    sort: 'seq',
+    query: q(code),
+  })
+}
+
+const toAction = (r) => ({ type: 'THROW', dart: r.dart, by: r.by, at: Date.parse(r.created) || 0 })
+
+// Objet session tel que RemoteGame le consomme depuis toujours.
+export function shapeSession(meta, rows) {
+  return {
+    code: normalizeCode(meta.id),
+    gameId: meta.gameId,
+    config: meta.config || {},
+    players: meta.players || [],
+    participants: meta.participants || {},
+    epoch: meta.epoch || 0,
+    actions: [...rows].sort((a, b) => a.seq - b.seq).map(toAction),
+  }
+}
+
+/** Crée une session et rend son code. */
+export async function createSession({ gameId, config = {}, players, hostName = 'Hôte' }) {
+  if (!getGame(gameId)) throw new Error(`Jeu inconnu: ${gameId}`)
+  if (!players || players.length < 2) throw new Error('Il faut au moins 2 joueurs')
+  const normalized = players.map((p, i) => ({ id: String(p.id ?? `p${i}`), name: p.name }))
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = generateCode()
+    try {
+      await pb.collection('sessions').create({
+        id: code.toLowerCase(), gameId, config, players: normalized, hostName, epoch: 0,
+        participants: { [deviceId()]: { name: hostName, joinedAt: Date.now() } },
+      })
+      return code
+    } catch (e) {
+      if (!isDuplicate(e)) throw e // collision de code (très improbable) : on retente
+    }
+  }
+  throw new Error('Impossible de générer un code, réessaie')
+}
+
+/** Lit une session SANS s'y déclarer (l'écran de jonction montre le jeu et les joueurs). */
+export async function peekSession(code) {
+  const meta = await fetchSession(code)
+  return shapeSession(meta, [])
+}
+
+/** Rejoint une session et y déclare l'appareil. */
+export async function joinSession(code, name = 'Invité') {
+  const meta = await fetchSession(code)
+  const participants = { ...(meta.participants || {}), [deviceId()]: { name, joinedAt: Date.now() } }
+  await pb.collection('sessions').update(meta.id, { participants })
+  return shapeSession({ ...meta, participants }, [])
+}
+
+/** Abonnement temps réel. cb reçoit l'objet session (ou null si elle disparaît). Rend la fonction de désabonnement. */
+export function subscribe(code, cb, onError) {
+  let meta = null
+  let rows = []
+  let closed = false
+  const unsubs = []
+  const emit = () => { if (!closed && meta) cb(shapeSession(meta, rows)) }
+  const fail = (e) => {
+    if (closed) return
+    if (isNotFound(e) || (e && e.message === 'Session introuvable')) cb(null)
+    else if (onError) onError(e)
+  }
+
+  // Rechargement complet : au démarrage, après une reconnexion, et quand l'epoch change.
+  const reload = async () => {
+    meta = await fetchSession(code)
+    rows = await fetchActions(code, meta.epoch)
+    emit()
+  }
+
+  ;(async () => {
+    try {
+      await reload()
+      unsubs.push(await pb.collection('sessions').subscribe(idOf(code), (e) => {
+        if (e.action === 'delete') { meta = null; cb(null); return }
+        const epochChanged = (e.record.epoch || 0) !== (meta.epoch || 0)
+        meta = e.record
+        if (epochChanged) reload().catch(fail)
+        else emit()
+      }))
+      unsubs.push(await pb.collection('actions').subscribe('*', (e) => {
+        if (!meta || e.record.session !== meta.id) return
+        if (e.action === 'delete') rows = rows.filter((r) => r.id !== e.record.id)
+        else if ((e.record.epoch || 0) === (meta.epoch || 0) && !rows.some((r) => r.id === e.record.id)) rows = [...rows, e.record]
+        emit()
+      }, { query: q(code), filter: pb.filter('session = {:s}', { s: idOf(code) }) }))
+      // Après une coupure, des événements ont pu être perdus : on relit tout.
+      let first = true
+      unsubs.push(await pb.realtime.subscribe('PB_CONNECT', () => {
+        if (first) { first = false; return }
+        reload().catch(fail)
+      }))
+      if (closed) unsubs.forEach((u) => u())
+    } catch (e) {
+      fail(e)
+    }
+  })()
+
+  return () => {
+    closed = true
+    unsubs.forEach((u) => { try { u() } catch (_) { /* déjà fermé */ } })
+  }
+}
+
+/** Ajoute une fléchette. Rend true si elle est enregistrée, false si la partie
+ *  était déjà finie (le client lève alors son affichage optimiste). */
+export async function throwDart(code, dart) {
+  const meta = await fetchSession(code)
+  const game = getGame(meta.gameId)
+  const valid = game && (game.validate ? game.validate(dart) : isValidDart(dart))
+  if (!valid) throw new Error('Tir invalide')
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const rows = await fetchActions(code, meta.epoch)
+    const state = buildState(shapeSession(meta, rows))
+    if (state && state.finished) return false // pas de tir après la fin
+    const seq = rows.length ? rows[rows.length - 1].seq + 1 : 1
+    try {
+      await pb.collection('actions').create({ session: meta.id, epoch: meta.epoch || 0, seq, dart, by: deviceId() })
+      return true
+    } catch (e) {
+      // Quota de requêtes atteint (rafale de tirs) : on souffle et on retente.
+      if (e && e.status === 429) { await new Promise((r) => setTimeout(r, 1000)); continue }
+      if (!isDuplicate(e)) throw e // un autre appareil a pris ce seq : on relit et on retente
+    }
+  }
+  throw new Error('Trop de tirs simultanés, réessaie')
+}
+
+/** Annule la dernière action de l'epoch en cours. */
+export async function undoLast(code) {
+  const meta = await fetchSession(code)
+  const last = await pb.collection('actions').getList(1, 1, {
+    filter: pb.filter('session = {:s} && epoch = {:e}', { s: meta.id, e: meta.epoch || 0 }),
+    sort: '-seq',
+    query: q(code),
+  })
+  if (last.items.length) await pb.collection('actions').delete(last.items[0].id, { query: q(code) })
+}
+
+/** Réinitialise la partie (mêmes joueurs, journal vidé) : on passe à l'epoch suivante. */
+export async function resetGame(code) {
+  const meta = await fetchSession(code)
+  await pb.collection('sessions').update(meta.id, { epoch: (meta.epoch || 0) + 1 })
+}
+
+/** Retire la présence de l'appareil (au mieux, en quittant). */
+export async function leaveSession(code) {
+  try {
+    const meta = await fetchSession(code)
+    const participants = { ...(meta.participants || {}) }
+    delete participants[deviceId()]
+    await pb.collection('sessions').update(meta.id, { participants })
+  } catch (_) {
+    /* ignoré */
+  }
 }
