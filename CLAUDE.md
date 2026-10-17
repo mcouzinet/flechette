@@ -2,7 +2,7 @@
 
 ## Projet
 
-Application web de suivi de scores pour jeux de flechettes. Deployee sur https://flechettes.surge.sh/
+Application web de suivi de scores pour jeux de flechettes. Deployee sur https://stonk.tolarianstudio.com/ (ancienne adresse flechettes.surge.sh redirigee)
 Nom de l'app : Stonk
 
 ## Stack technique
@@ -10,7 +10,7 @@ Nom de l'app : Stonk
 - **Framework** : Vue.js 3 (Options API)
 - **Build** : Vite 4
 - **Style** : Tailwind CSS 3 + polices custom (Nebula Sans, Anton, Caveat, Hanken Grotesk)
-- **Deploiement** : Surge.sh (`npm run build && npx surge dist --domain flechettes.surge.sh`)
+- **Deploiement** : serveur Tolarian via la skill `publier` (`npm run deploy`, Node 22 requis)
 - **Backend** : Firebase (Firestore pour les resultats, Auth pour magic link)
 - **Auth** : Firebase Auth magic link (optionnelle - on peut jouer sans compte). Ne fonctionne pas en mode standalone/PWA.
 - **PWA** : Installable sur tablette/mobile (site.webmanifest, meta tags)
@@ -21,7 +21,7 @@ Nom de l'app : Stonk
 npm run dev          # Serveur de developpement
 npm run build        # Build production dans /dist
 npm run preview      # Preview du build
-npm run deploy       # Deploie sur surge.sh
+npm run deploy       # Deploie sur stonk.tolarianstudio.com
 ```
 
 ## Architecture
@@ -106,5 +106,5 @@ Chaque jeu suit le meme pattern :
 - **Projet** : flechettes-ecccb
 - **Firestore** : collection `game_results` (resultats de parties), index sur userId + createdAt
 - **Security rules** : create/read restreint au userId, pas d'update/delete
-- **Auth** : magic link email (optionnel), domaine autorise : flechettes.surge.sh
+- **Auth** : magic link email (optionnel), domaines autorises : stonk.tolarianstudio.com (et flechettes.surge.sh, historique)
 - **Fallback** : si pas connecte ou Firebase echoue, sauvegarde dans localStorage (`dartVictories`)

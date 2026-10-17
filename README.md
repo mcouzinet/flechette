@@ -2,7 +2,7 @@
 
 App de scores de flechettes entre potes. 10 jeux, Vue 3, Firebase.
 
-https://flechettes.surge.sh/
+https://stonk.tolarianstudio.com/
 
 ## Jeux disponibles
 
@@ -42,5 +42,5 @@ Composants partages pour eviter la duplication entre les 10 jeux :
 npm install        # Installer les dependances
 npm run dev        # Serveur de developpement
 npm run build      # Build production
-npm run deploy     # Deployer sur surge.sh
+npm run deploy     # Deployer sur stonk.tolarianstudio.com (serveur Tolarian, Node 22)
 ```
