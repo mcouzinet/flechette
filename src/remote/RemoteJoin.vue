@@ -49,6 +49,7 @@
 <script>
 import { peekSession, joinSession, normalizeCode, CODE_LEN } from './session.js'
 import { GAMES } from './games/index.js'
+import { pb } from '../pocketbase.js'
 
 export default {
   name: 'RemoteJoin',
@@ -88,7 +89,10 @@ export default {
       this.busy = true
       try {
         this.session = await peekSession(this.codeInput)
-        this.name = ''
+        // Le compte connecté choisit d'office le joueur qui porte son nom.
+        const me = (pb.authStore.record?.name || '').trim().toLowerCase()
+        const mine = me && this.session.players.find((p) => p.name.trim().toLowerCase() === me)
+        this.name = mine ? mine.name : ''
       } catch (e) {
         const msg = String((e && e.message) || '')
         // « Session introuvable » est le vocabulaire du service, pas celui du

@@ -1,5 +1,7 @@
 # Plan : connexion obligatoire et connexions sociales
 
+**Réalisé le 29/10/2026**, voir « Bilan » en fin de document.
+
 État au 29/10/2026. Prérequis acquis : PocketBase en production (`stonk-api`), connexion par code email fonctionnelle (SMTP Resend, expéditeur `stonk@cliche.tolarianstudio.com`), `account.js` sait déjà faire `authWithOAuth2`.
 
 ## Objectif
@@ -74,3 +76,14 @@ Même écran ; OAuth via `@capacitor/browser` (déjà branché). Vérifier sur l
 | Le code email part en indésirables | Domaine Resend déjà vérifié (SPF, DKIM) ; ajouter un domaine dédié à Stonk si la limite gratuite le permet un jour |
 | Fenêtre OAuth bloquée sur iOS | Ouverture dans le geste du clic (étape 2) |
 | Le serveur tombe : plus personne ne peut jouer, même en local | Nouveau, puisque le local dépendait de rien. Garder la session en cache : un utilisateur déjà connecté joue en local même serveur injoignable |
+
+## Bilan (29/10/2026)
+
+| Étape | État |
+|---|---|
+| 1. Fournisseurs | Code fait : `pb_hooks/oauth.pb.js` active Google, Discord et Apple dès que `GOOGLE_CLIENT_ID`/`_SECRET`, `DISCORD_CLIENT_ID`/`_SECRET`, `APPLE_CLIENT_ID`/`_SECRET` sont posés dans Dokploy. **Aucun n'est configuré en production** : seul le code email s'affiche. Testé en local avec des identifiants factices (boutons affichés, fenêtre ouverte dans le clic, départ vers Google avec PKCE). Le circuit complet chez un fournisseur reste à vérifier avec de vrais identifiants. |
+| 2. Écran de connexion | Fait. Vérifié : visite sans compte, connexion par code, lien de partie rejoué après connexion (« Connecte-toi pour rejoindre la partie »). |
+| 3. Reprise des victoires | Fait, testé (y compris une coupure réseau au milieu : ni perte ni doublon) et vérifié dans le navigateur. |
+| 4. Règles serveur | Fait : `sessions` et `actions` exigent un compte, une action est signée par son auteur. `npm run test:pb` couvre le refus anonyme. |
+| 5. App native | L'écran de connexion s'affiche dans le simulateur iOS contre la production. Retour d'OAuth dans l'app non vérifié (pas d'identifiants). |
+| 6. Publication | Web et serveur déployés, CLAUDE.md à jour. |

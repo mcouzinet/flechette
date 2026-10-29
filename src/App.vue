@@ -9,8 +9,15 @@
     <!-- Voile sous la status bar (app native) : le contenu qui scrolle passe dessous -->
     <div class="statusbar-shim" aria-hidden="true"></div>
 
+    <!-- Connexion obligatoire : tant qu'il n'y a pas de compte, cet ecran
+         remplace tout le reste. Un lien de partie (?partie=) est rejoue apres. -->
+    <div v-if="screen === 'boot'" class="flex-1"></div>
+    <div v-else-if="screen === 'login'" class="relative flex-1 overflow-y-auto z-10">
+      <Connexion :invited="!!joinCode" @connected="onConnected" />
+    </div>
+
     <!-- Page d'accueil -->
-    <div v-if="screen === 'home'" class="flex-1 flex flex-col xl:overflow-hidden relative z-10">
+    <div v-else-if="screen === 'home'" class="flex-1 flex flex-col xl:overflow-hidden relative z-10">
 
       <!-- Header -->
       <header class="flex items-start justify-between px-5 xl:px-9 pt-6 xl:pt-7 pb-4 flex-shrink-0">
@@ -24,9 +31,8 @@
         </div>
         <div class="hidden xl:flex gap-3">
           <button @click="currentComponent = 'Resultats'" class="chalk-btn" style="color: var(--chalk-faint)">les scores ✦</button>
-          <button v-if="!user" @click="openAuth" class="chalk-btn" style="color: var(--chalk-faint)">connexion</button>
-          <div v-else class="flex items-center gap-3">
-            <span class="text-lg" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-gold)">{{ user.email }}</span>
+          <div class="flex items-center gap-3">
+            <span class="text-lg" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-gold)">{{ userName }}</span>
             <button @click="logout" class="chalk-btn" style="color: var(--chalk-red)">quitter</button>
           </div>
         </div>
@@ -151,8 +157,8 @@
       <div class="xl:hidden flex items-center justify-between py-3 flex-shrink-0 mx-5"
         style="border-top: 2px dashed var(--chalk-line)">
         <button @click="currentComponent = 'Resultats'" class="chalk-btn" style="color: var(--chalk-faint)">scores ✦</button>
-        <button v-if="!user" @click="openAuth" class="chalk-btn" style="color: var(--chalk-faint)">connexion</button>
-        <span v-else class="text-lg" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-gold)">{{ user.email }}</span>
+        <span class="text-lg truncate max-w-[40%]" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-gold)">{{ userName }}</span>
+        <button @click="logout" class="chalk-btn" style="color: var(--chalk-red)">quitter</button>
       </div>
     </div>
 
@@ -168,66 +174,9 @@
 
     <!-- Composant de jeu -->
     <div v-else class="relative flex-1 xl:overflow-hidden z-10">
-      <component :is="currentComponent" :players="players" @exit="currentComponent = null" @login="openAuth" />
+      <component :is="currentComponent" :players="players" @exit="currentComponent = null" />
     </div>
 
-    <!-- Modal de connexion -->
-    <div v-if="showAuthModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="chalk-grain rounded-2xl p-8 border-2 border-dashed max-w-md mx-4 w-full"
-        style="background: radial-gradient(120% 80% at 50% 0%, #1e2e28, var(--chalk-bg) 70%); border-color: var(--chalk-line)">
-        <h3 class="text-2xl text-center mb-2" style="font-family: var(--font-display); color: var(--chalk-cream)">CONNEXION</h3>
-        <p class="text-center mb-6 text-sm" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-          Connecte-toi pour sauvegarder tes résultats. Pas obligatoire pour jouer.</p>
-
-        <!-- App native : Apple ou Google (navigateur système), l'email en secours. -->
-        <div v-if="isStandalone" class="space-y-3 mb-5">
-          <button @click="signInProvider('apple')" :disabled="authLoading"
-            class="chalk-btn w-full disabled:opacity-40" style="color: var(--chalk-cream)">&#63743; Continuer avec Apple</button>
-          <button @click="signInProvider('google')" :disabled="authLoading"
-            class="chalk-btn w-full disabled:opacity-40" style="color: var(--chalk-gold)">Continuer avec Google</button>
-          <p class="text-center text-sm pt-2" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint2)">ou par email</p>
-        </div>
-
-        <!-- Email : un code à 6 chiffres, plus de lien magique. -->
-        <div v-if="!otpId" class="space-y-4">
-          <label for="auth-email" class="sr-only">Ton adresse email</label>
-          <input id="auth-email" v-model="authEmail" @keyup.enter="sendCode" type="email" placeholder="ton adresse email"
-            autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="email" enterkeyhint="send"
-            class="w-full bg-transparent py-3 px-2 text-base border-none rounded-none"
-            style="border-bottom: 2px solid var(--chalk-line); color: var(--chalk-cream); font-family: var(--font-ui); -webkit-appearance: none" />
-
-          <button @click="sendCode" :disabled="!authEmail.trim() || authLoading"
-            class="chalk-btn-big w-full disabled:opacity-40">
-            {{ authLoading ? 'Envoi en cours...' : 'Recevoir un code' }}
-          </button>
-        </div>
-
-        <div v-else class="space-y-4">
-          <p class="text-center text-sm" style="font-family: var(--font-hand); font-weight: 600; color: var(--chalk-faint)">
-            Code envoyé à {{ authEmail }}.</p>
-          <label for="auth-code" class="sr-only">Code reçu par email</label>
-          <input id="auth-code" v-model="authCode" @keyup.enter="checkCode" placeholder="code à 6 chiffres"
-            inputmode="numeric" autocomplete="one-time-code" maxlength="6" enterkeyhint="go"
-            class="w-full bg-transparent py-3 px-2 text-center text-2xl tracking-[0.4em] border-none rounded-none"
-            style="border-bottom: 2px solid var(--chalk-line); color: var(--chalk-gold); font-family: var(--font-display); -webkit-appearance: none" />
-          <button @click="checkCode" :disabled="authCode.trim().length < 6 || authLoading"
-            class="chalk-btn-big w-full disabled:opacity-40">
-            {{ authLoading ? 'Vérification...' : 'Se connecter' }}
-          </button>
-          <button @click="otpId = null; authCode = ''; authMessage = ''"
-            class="w-full text-sm cursor-pointer bg-transparent border-none" style="color: var(--chalk-faint2)">changer d'adresse</button>
-        </div>
-
-          <div v-if="authMessage" :class="[
-            'text-center text-sm p-3 rounded-lg',
-            authMessage.includes('Erreur') ? 'text-[var(--chalk-red)]' : 'text-[var(--chalk-green)]'
-          ]" style="font-family: var(--font-hand); font-weight: 600">{{ authMessage }}</div>
-
-        <button @click="closeAuth"
-          class="w-full mt-4 text-sm cursor-pointer bg-transparent border-none" style="color: var(--chalk-faint2)">
-          Fermer</button>
-      </div>
-    </div>
   </main>
 </template>
 
@@ -238,9 +187,8 @@ import GameLoading from './components/GameLoading.vue';
 import GameLoadError from './components/GameLoadError.vue';
 import { Capacitor } from '@capacitor/core';
 
-// Les comptes (PocketBase) ne sont PAS importes statiquement : "jouer sans
-// compte" est une contrainte produit, donc rien qui touche aux comptes ne doit
-// se trouver sur le chemin du premier rendu.
+// Les comptes (PocketBase) sont charges a la demande : sans trace de compte,
+// l'ecran de connexion s'affiche sans attendre le SDK.
 const loadAuth = () => import('./services/account.js');
 
 // Un compte n'existe que si PocketBase a laisse sa trace en local.
@@ -272,17 +220,12 @@ export default {
     Resultats: game(() => import('./components/Resultats.vue')),
     RemoteGame: game(() => import('./remote/RemoteGame.vue')),
     RemoteJoin: game(() => import('./remote/RemoteJoin.vue')),
+    Connexion: game(() => import('./components/Connexion.vue')),
   },
   data() {
     return {
       user: null,
-      authEmail: '',
-      authCode: '',
-      otpId: null,
-      showAuthModal: false,
-      authMessage: '',
-      authLoading: false,
-      isStandalone: false,
+      authReady: false,
       selectedGame: 'cricket',
       // « Jouer a distance » est une option de la partie en cours de creation.
       remotePlay: false,
@@ -358,6 +301,10 @@ export default {
     selectedGameEntry() {
       return this.games.find(g => g.id === this.selectedGame) || null;
     },
+    userName() {
+      const u = this.user;
+      return (u && (u.name || String(u.email || '').split('@')[0])) || '';
+    },
     selectedGameName() {
       const game = this.selectedGameEntry;
       return game ? game.name : 'choisis un jeu';
@@ -365,6 +312,8 @@ export default {
     // Un seul aiguillage d'ecran : accueil, jeu local, ou la meme partie jouee
     // a distance. Le distant n'a pas de racine a lui.
     screen() {
+      if (!this.authReady) return 'boot';
+      if (!this.user) return 'login';
       if (this.remoteView === 'game') return 'remote-game';
       if (this.remoteView === 'join') return 'remote-join';
       return this.currentComponent ? 'local-game' : 'home';
@@ -429,14 +378,10 @@ export default {
       this.joinCode = partie;
       this.remoteView = 'join';
     }
-    // L'etat de connexion arrive apres le premier rendu, jamais avant.
-    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 400));
-    idle(() => this.initAuth());
+    // La connexion conditionne tout l'affichage : on la verifie tout de suite.
+    this.initAuth();
     const isNative = Capacitor.isNativePlatform();
     const isPWA = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-    if (isNative || isPWA) {
-      this.isStandalone = true; // drives the in-app account UI (native sign-in)
-    }
     // PWA keeps the original fixed (no-scroll) screens; the native app must be
     // able to scroll, so it gets its own class that does NOT force overflow:hidden.
     if (isPWA) document.documentElement.classList.add('is-standalone');
@@ -444,58 +389,33 @@ export default {
   },
   methods: {
     async initAuth() {
-      // Sans trace de compte, on ne charge rien du tout.
-      if (!mayHaveAccount()) return;
+      try {
+        // Sans trace de compte, inutile d'attendre le serveur : ecran de connexion direct.
+        if (mayHaveAccount()) {
+          const m = await loadAuth();
+          m.onUserChange((user) => { this.user = user; });
+          this.user = await m.refresh();
+          if (this.user) this.afterLogin();
+        }
+      } finally {
+        this.authReady = true;
+      }
+    },
+
+    async onConnected(user) {
+      this.user = user;
       const m = await loadAuth();
-      m.onUserChange((user) => { this.user = user; });
-      this.user = await m.refresh();
+      m.onUserChange((u) => { this.user = u; });
+      this.afterLogin();
     },
 
-    async sendCode() {
-      if (!this.authEmail.trim()) return;
-      this.authLoading = true;
-      this.authMessage = '';
+    // Les victoires gardees dans ce navigateur remontent dans le compte.
+    async afterLogin() {
       try {
-        const m = await loadAuth();
-        this.otpId = await m.requestCode(this.authEmail);
-        this.authCode = '';
+        const { default: results } = await import('./services/resultsService.js');
+        await results.importLocalVictories();
       } catch (error) {
-        console.error('Envoi du code :', error);
-        this.authMessage = 'Erreur lors de l\'envoi. Vérifie l\'adresse email.';
-      } finally {
-        this.authLoading = false;
-      }
-    },
-
-    async checkCode() {
-      this.authLoading = true;
-      this.authMessage = '';
-      try {
-        const m = await loadAuth();
-        this.user = await m.verifyCode(this.otpId, this.authCode);
-        m.onUserChange((user) => { this.user = user; });
-        this.closeAuth();
-      } catch (error) {
-        console.error('Vérification du code :', error);
-        this.authMessage = 'Erreur : code invalide ou expiré.';
-      } finally {
-        this.authLoading = false;
-      }
-    },
-
-    async signInProvider(provider) {
-      this.authLoading = true;
-      this.authMessage = '';
-      try {
-        const m = await loadAuth();
-        this.user = await m.signInWithProvider(provider);
-        m.onUserChange((user) => { this.user = user; });
-        this.closeAuth();
-      } catch (error) {
-        console.error('Connexion ' + provider + ' :', error);
-        this.authMessage = 'Erreur lors de la connexion ' + (provider === 'apple' ? 'Apple' : 'Google') + '.';
-      } finally {
-        this.authLoading = false;
+        console.error('Reprise des victoires locales :', error);
       }
     },
 
@@ -503,19 +423,8 @@ export default {
       const m = await loadAuth();
       m.logout();
       this.user = null;
-      this.showAuthModal = false;
-    },
-
-    closeAuth() {
-      this.showAuthModal = false;
-      this.authMessage = '';
-      this.otpId = null;
-      this.authCode = '';
-    },
-
-    openAuth() {
-      this.showAuthModal = true;
-      loadAuth();
+      this.currentComponent = null;
+      this.exitRemote();
     },
 
     // Un seul bouton « Lancer la partie » : la case a cocher decide si les

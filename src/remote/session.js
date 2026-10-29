@@ -14,7 +14,7 @@
      avant ; subscribe() livre le même objet session qu'à l'époque de Firestore
      ({ gameId, config, players, participants, actions: [{ type, dart, by, at }] }),
      si bien que RemoteGame et les plateaux n'ont pas changé.
-   - pas de compte : l'appareil est identifié par un jeton aléatoire local.
+   - chaque joueur est connecté : le compte signe ses fléchettes (`by`).
 
    Le code de 6 lettres est un jeton d'édition partagé, pas une frontière
    d'intégrité : les règles figent les métadonnées mais ne valident pas le
@@ -41,16 +41,10 @@ export function normalizeCode(code) {
 const idOf = (code) => normalizeCode(code).toLowerCase()
 const q = (code) => ({ s: idOf(code) }) // les règles exigent ?s=<code> pour lire les actions
 
-// Identité de l'appareil (remplace l'auth anonyme de Firebase).
+// Identité du joueur : son compte (la connexion est obligatoire). Le champ
+// `by` des actions et les clés de présence en dépendent.
 export function deviceId() {
-  const KEY = 'stonk-device'
-  try {
-    let id = localStorage.getItem(KEY)
-    if (!id) { id = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem(KEY, id) }
-    return id
-  } catch (_) {
-    return 'anon'
-  }
+  return pb.authStore.record?.id || 'anon'
 }
 
 const isNotFound = (e) => e && e.status === 404

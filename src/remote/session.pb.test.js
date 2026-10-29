@@ -13,6 +13,19 @@ run('session.js sur PocketBase', () => {
     globalThis.EventSource = EventSource
     import.meta.env.VITE_PB_URL = URL
     S = await import('./session.js')
+    // La connexion est obligatoire : un compte de test, connecté par mot de passe.
+    const { pb } = await import('../pocketbase.js')
+    const email = `test-${Date.now()}@example.com`, password = 'motdepasse-de-test'
+    await pb.collection('users').create({ email, password, passwordConfirm: password })
+    await pb.collection('users').authWithPassword(email, password)
+  })
+
+  it('refuse tout à un visiteur sans compte', async () => {
+    const { default: PocketBase } = await import('pocketbase')
+    const anon = new PocketBase(URL)
+    await expect(anon.collection('sessions').create({ id: 'zzzzz2', gameId: 'cricket', players: [] })).rejects.toMatchObject({ status: 400 })
+    const code = await S.createSession({ gameId: 'cricket', players })
+    await expect(anon.collection('sessions').getOne(code.toLowerCase())).rejects.toMatchObject({ status: 404 })
   })
 
   const players = [{ id: 'a', name: 'Alice' }, { id: 'b', name: 'Bob' }]

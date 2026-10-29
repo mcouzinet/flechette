@@ -76,6 +76,36 @@ class ResultsService {
     }
   }
 
+  /** Envoie dans le compte les victoires gardées dans ce navigateur avant la
+   *  connexion. Chacune quitte le stockage local dès qu'elle est enregistrée :
+   *  une coupure en route ne crée ni perte ni doublon au prochain essai. */
+  async importLocalVictories() {
+    const { currentUser } = await loadAccount()
+    const { pb } = await import('../pocketbase.js')
+    const user = currentUser()
+    if (!user) return 0
+    let pending = this.getLocalVictories()
+    let sent = 0
+    while (pending.length) {
+      const v = pending[0]
+      await pb.collection('game_results').create({
+        jeu: v.gameType,
+        joueurs: v.participants || [],
+        scores: [],
+        vainqueur: v.winner,
+        scoreVainqueur: v.score,
+        totalMoves: v.totalMoves,
+        date: (v.date || '').split('T')[0],
+        user: user.id,
+        extra: { importeDe: 'navigateur', date: v.date },
+      })
+      pending = pending.slice(1)
+      localStorage.setItem('dartVictories', JSON.stringify(pending))
+      sent++
+    }
+    return sent
+  }
+
   getLocalVictories() {
     try {
       return JSON.parse(localStorage.getItem('dartVictories') || '[]')

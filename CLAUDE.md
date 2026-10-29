@@ -12,7 +12,7 @@ Nom de l'app : Stonk
 - **Style** : Tailwind CSS 3 + polices custom (Nebula Sans, Anton, Caveat, Hanken Grotesk)
 - **Deploiement** : serveur Tolarian via la skill `publier` (`npm run deploy`, Node 22 requis)
 - **Backend** : PocketBase auto-heberge sur le VPS (https://stonk-api.tolarianstudio.com, depot prive `mcouzinet/stonk-api`), Firebase abandonne le 17/10/2026
-- **Auth** : optionnelle (on peut jouer sans compte). Web : code a 6 chiffres par email. App native : Apple ou Google via OAuth2 PocketBase (navigateur systeme), email en secours.
+- **Auth** : OBLIGATOIRE depuis le 29/10/2026 (ecran `Connexion.vue` tant qu'il n'y a pas de session, invites d'une partie a distance compris). Google, Discord, Apple via OAuth2 PocketBase (affiches seulement si configures sur le serveur), sinon code a 6 chiffres par email. A la premiere connexion, les victoires gardees dans le navigateur remontent dans le compte. Hors ligne, une session deja ouverte reste valide.
 - **PWA** : Installable sur tablette/mobile (site.webmanifest, meta tags)
 
 ## Commandes
